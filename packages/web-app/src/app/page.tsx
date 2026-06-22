@@ -98,6 +98,23 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-2 sm:gap-4">
+          <a
+            href="https://github.com/jedmamosto/open-wizpay"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#c5c9b1] hover:text-white transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-[#ccf15a] focus-visible:outline-none rounded px-2 py-1.5 whitespace-nowrap"
+          >
+            <svg
+              role="img"
+              viewBox="0 0 24 24"
+              className="h-4 w-4 fill-current"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <title>GitHub</title>
+              <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+            </svg>
+            GitHub
+          </a>
           <Link href="/login" className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#c5c9b1] hover:text-white transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-[#ccf15a] focus-visible:outline-none rounded px-2 py-1.5 whitespace-nowrap">
             Sign In
           </Link>
@@ -116,9 +133,14 @@ export default function Home() {
         
         {/* Left Copy Panel */}
         <div className="lg:col-span-6 space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#ccf15a]/30 bg-[#ccf15a]/5 text-[#ccf15a] text-xs font-bold tracking-widest uppercase">
-            <span className="h-2 w-2 rounded-full bg-[#ccf15a] animate-pulse shrink-0" />
-            DIRECT SETTLEMENT GATEWAY
+          <div className="flex flex-wrap gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#ccf15a]/30 bg-[#ccf15a]/5 text-[#ccf15a] text-xs font-bold tracking-widest uppercase">
+              <span className="h-2 w-2 rounded-full bg-[#ccf15a] animate-pulse shrink-0" />
+              DIRECT SETTLEMENT GATEWAY
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#6dfe9c]/30 bg-[#6dfe9c]/5 text-[#6dfe9c] text-xs font-bold tracking-widest uppercase">
+              <span>MIT LICENSE (Open-Source)</span>
+            </div>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-black uppercase tracking-tight text-white leading-[1.05]">
@@ -590,6 +612,21 @@ export default function Home() {
             <p className="text-[#a6d0b5] text-sm sm:text-base leading-relaxed">
               WizPay supports the open-standard <strong>Model Context Protocol (MCP)</strong>. This connects WizPay directly to your local AI coding assistants (like Antigravity, Claude Desktop, Cursor, Cline, or Roo Code) so they can build, customize, and track payment forms for you using simple chat instructions.
             </p>
+            <div className="p-4 rounded-lg bg-[#062517]/50 border border-[#112f21]/80 space-y-2">
+              <h4 className="text-xs font-mono uppercase text-[#6dfe9c] font-bold">Self-Hostable Core</h4>
+              <p className="text-xs text-[#a6d0b5] leading-normal">
+                Want complete data custody and zero dependencies? Clone the repository and self-host your own payment engine on Vercel and Firebase in minutes.
+              </p>
+              <a 
+                href="https://github.com/jedmamosto/open-wizpay" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="inline-flex items-center gap-1.5 text-xs text-[#ccf15a] hover:underline font-semibold"
+              >
+                <span>Read the Self-Hosting Guide</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </a>
+            </div>
 
             {/* Step-by-Step Onboarding Instructions */}
             <div className="space-y-5 pt-4">
@@ -883,7 +920,7 @@ export default function Home() {
           <div className="flex gap-6">
             <span className="hover:text-white cursor-pointer focus-visible:underline outline-none">[Terms of Service]</span>
             <span className="hover:text-white cursor-pointer focus-visible:underline outline-none">[Privacy Policy]</span>
-            <span className="hover:text-white cursor-pointer focus-visible:underline outline-none">[Developer Docs]</span>
+            <a href="https://github.com/jedmamosto/open-wizpay" target="_blank" rel="noopener noreferrer" className="hover:text-white focus-visible:underline outline-none">[GitHub Repository]</a>
           </div>
         </div>
       </footer>
