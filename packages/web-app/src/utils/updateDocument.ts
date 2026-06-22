@@ -1,19 +1,13 @@
-import { db } from '@/firebase/config';
-import { doc, updateDoc } from 'firebase/firestore';
+import admin from '@/firebase/adminConfig';
 
 export default async function updateDocument(
     collectionName: string,
     id: string,
     data: object
 ) {
-    const docRef = doc(db, collectionName, id);
-
-    // console.log('docRef:', docRef);
-    // console.log('data:', data);
-
     try {
-        await updateDoc(docRef, data);
-        // console.log('Document successfully updated!');
+        const db = admin.firestore();
+        await db.collection(collectionName).doc(id).update(data);
     } catch (error) {
         console.error('Error updating document: ', error);
     }

@@ -1,28 +1,16 @@
-import { db } from '@/firebase/config';
-import {
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    query,
-    where,
-} from 'firebase/firestore';
+import admin from '@/firebase/adminConfig';
 
 export default async function queryDocument(
     collectionName: string,
     fieldName: string,
     searchValue: string
 ) {
+    const db = admin.firestore();
     if (fieldName === 'id') {
-        // console.log('ID STUFF')
-        const docRef = doc(db, collectionName, searchValue);
-        // console.log('docRef', docRef)
         try {
-            const docSnap = await getDoc(docRef);
-            // console.log('doc data:', docSnap.exists())
-            if (docSnap.exists()) {
-                // console.log('Query DATA:', docSnap.data())
-                return docSnap.data();
+            const docSnap = await db.collection(collectionName).doc(searchValue).get();
+            if (docSnap.exists) {
+                return docSnap.data() || null;
             } else {
                 return null;
             }
@@ -31,13 +19,12 @@ export default async function queryDocument(
             return null;
         }
     } else {
-        const collectionRef = collection(db, collectionName);
-        const queryParameters = query(
-            collectionRef,
-            where(fieldName, '==', searchValue)
-        );
         try {
-            const querySnapShot = await getDocs(queryParameters);
+            const querySnapShot = await db
+                .collection(collectionName)
+                .where(fieldName, '==', searchValue)
+                .limit(1)
+                .get();
             if (!querySnapShot.empty) {
                 const queryData = querySnapShot.docs[0].data();
                 const queryId = querySnapShot.docs[0].id;

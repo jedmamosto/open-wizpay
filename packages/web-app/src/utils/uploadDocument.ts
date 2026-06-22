@@ -1,14 +1,12 @@
-import { db } from '@/firebase/config';
-import { addDoc, collection } from 'firebase/firestore';
+import admin from '@/firebase/adminConfig';
 
 export default async function uploadDocument(
     collectionName: string,
     data: object
 ) {
     try {
-        const collectionRef = collection(db, collectionName);
-        await addDoc(collectionRef, data);
-        // console.log("Document written with ID: ", docRef.id)
+        const db = admin.firestore();
+        await db.collection(collectionName).add(data);
     } catch (error) {
         console.error('Error adding document: ', error);
     }

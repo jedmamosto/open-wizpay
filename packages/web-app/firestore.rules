@@ -7,23 +7,19 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Signups can only be created by anyone, but not read publicly
+    // Signups cannot be read or written directly by client-side Web SDK
     match /signups/{signUpId} {
-      allow create: if true;
-      allow read, update, delete: if false;
+      allow read, write: if false;
     }
     
-    // Payment forms are read-only for public checkout sessions, 
-    // and can only be written/edited by their owner
+    // Payment forms are only accessed via Next.js API Routes (Admin SDK)
     match /payment-forms/{paymentFormId} {
-      allow read: if true;
-      allow write: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
+      allow read, write: if false;
     }
 
-    // Checkout sessions can only be created client-side, not modified or read directly
+    // Checkout sessions are only accessed via Next.js API Routes (Admin SDK)
     match /checkout-sessions/{sessionId} {
-      allow create: if true;
-      allow read, update, delete: if false;
+      allow read, write: if false;
     }
 
     // API Keys must NEVER be read or written to directly by clients
