@@ -1,0 +1,10 @@
+<errors>
+  Failed to fetch checkout session: {
+  status: 404,
+  statusText: 'Not Found',
+  error: '{"errors":[{"code":"resource_not_found","detail":"No such checkout session with id
+  {CHECKOUT_SESSION_ID}."}]}'
+  }
+
+  Checkout session error details: No such checkout session with id {CHECKOUT_SESSION_ID}.
+</errors>

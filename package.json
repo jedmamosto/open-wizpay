@@ -1,0 +1,15 @@
+{
+  "name": "wizpay-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=packages/web-app",
+    "build:web": "npm run build --workspace=packages/web-app",
+    "build:mcp": "npm run build --workspace=packages/mcp-server",
+    "build": "npm run build:web && npm run build:mcp",
+    "setup:mcp": "npm run setup --workspace=packages/mcp-server"
+  }
+}

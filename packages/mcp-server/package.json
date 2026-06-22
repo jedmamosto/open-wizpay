@@ -1,0 +1,32 @@
+{
+  "name": "@jedmamosto/wizpay-mcp-setup",
+  "version": "1.0.11",
+  "description": "MCP Server to manage WizPay payment forms",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "wizpay-mcp": "./dist/index.js",
+    "wizpay-mcp-setup": "./scripts/setup-mcp.js"
+  },
+  "files": [
+    "dist",
+    "scripts",
+    "package.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "setup": "node scripts/setup-mcp.js",
+    "setup:antigravity": "node scripts/setup-mcp.js",
+    "release": "node scripts/release.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}

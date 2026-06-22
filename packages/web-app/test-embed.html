@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>WizPay Embed Test Site</title>
+        <style>
+            body {
+                background-color: #f1f5f9;
+                padding: 40px;
+            }
+            .container {
+                max-width: 900px;
+                margin: 0 auto;
+                background: #fff;
+                padding: 24px;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2>Welcome to My Custom Shop</h2>
+            <hr
+                style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0"
+            />
+
+            <!-- WizPay Storefront SDK Containers (Testing multi-instance) -->
+            <div style="display: flex; flex-direction: column; gap: 40px;">
+                <div
+                    class="wizpay-storefront"
+                    data-form-id="QmSti25BUoZK6181kYVT"
+                ></div>
+                <div
+                    class="wizpay-storefront"
+                    data-form-id="QmSti25BUoZK6181kYVT"
+                ></div>
+            </div>
+        </div>
+
+        <!-- Load local WizPay SDK script -->
+        <script src="http://localhost:3000/sdk/wizpay.js"></script>
+    </body>
+</html>

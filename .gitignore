@@ -1,0 +1,33 @@
+# Dependency directories
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# TypeScript build output
+dist/
+*.tsbuildinfo
+
+# Local env files (containing secrets)
+.env*.local
+
+# Private credentials / Firebase keys
+*.json
+!package.json
+!tsconfig.json
+!components.json
+!package-lock.json
+!firestore.indexes.json
+!firestore.rules
+
+# Local IDE configuration
+.idea/
+.vscode/
+.cursor/
+.agents/
+.impeccable/
+
+# OS files
+.DS_Store
+Thumbs.db

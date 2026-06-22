@@ -1,0 +1,18 @@
+<prompt>
+  <issue>
+    My client mentioned that the workflow should only trigger once a successful payment is done.
+    However, it seems to be triggering regardless of the payment status or it just happens.
+
+    Can you please check the workflow configuration and ensure that it is set to trigger only after
+    a successful payment event?
+  </issue>
+
+  <thinking>
+    To address the issue, I need you to review the workflow configuration in the codebase.
+    Look for the event triggers and conditions set for the workflow to ensure it only
+    activates after a successful payment event. If you find that the trigger is set incorrectly or
+    too
+    broadly, modify it to specifically check for a successful payment status before proceeding with
+    the workflow actions.
+  </thinking>
+</prompt>
