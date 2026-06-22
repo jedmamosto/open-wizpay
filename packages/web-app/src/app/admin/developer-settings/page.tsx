@@ -49,9 +49,15 @@ export default function DeveloperSettings() {
 
   useEffect(() => {
     if (currentUserId) {
-      fetchKeys();
+      const handle = setTimeout(() => {
+        fetchKeys();
+      }, 0);
+      return () => clearTimeout(handle);
     } else if (!authLoading) {
-      setLoading(false);
+      const handle = setTimeout(() => {
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(handle);
     }
   }, [currentUserId, authLoading, fetchKeys]);
 

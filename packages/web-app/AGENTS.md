@@ -37,6 +37,8 @@ WizPay is a modern, TypeScript-based Next.js payment engine and storefront orche
 * **Credential Protection**: Never return private keys (e.g., `paymentFormPaymongoSecKey`) in public client-facing API responses. Sanitization is mandatory.
 * **Firestore Operations**: Utilize the shared wrapper utilities in `src/utils/` for CRUD operations on documents and collections.
 * **API Key Auth**: Developer API keys are validated using `src/utils/apiKeyAuth.ts` and hashed using SHA-256. Enforce merchant scoping in routes.
+* **CI Validation**: All changes must pass `npm run lint` and compilation/build checks locally before submitting a PR to satisfy the automated CI validation suite.
+* **Secret Protection**: Keep environment keys secure. Never commit live or mock Paymongo keys or Firebase service files.
 
 ## 5. Common Development Commands
 * Run development server: `npm run dev`

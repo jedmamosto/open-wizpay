@@ -20,6 +20,8 @@ WizPay Model Context Protocol (MCP) Server is a lightweight Node.js/TypeScript-b
 - Maintain `AGENTS.md` as a living memory document under 200 lines.
 - Verify requirements and execute builds/tests before deploying.
 - Every time the MCP server logic or tooling is modified, the npm package (`@jedmamosto/wizpay-mcp-setup`) must be updated and published to reflect the changes.
+- **CI Validation**: Ensure that the project compiles cleanly (`npm run build`) before pushing or opening a PR to satisfy the automated CI validation suite.
+- **Secret Protection**: Do not hardcode or commit keys or testing credentials. Use environment configuration.
 
 ## 5. Common Development Commands
 - Build project: `npm run build`

@@ -103,7 +103,14 @@ export default function Dashboard() {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [paymentForms, setPaymentForms] = useState<PaymentForm[]>([]);
 
-    const [tableData, setTableData] = useState<TableData[]>([]);
+    const tableData = React.useMemo<TableData[]>(() => {
+        return paymentForms.map((form) => ({
+            id: form.paymentFormId,
+            formTitle: form.paymentFormTitle,
+            formDescription: form.paymentFormDescription,
+            productCount: form.paymentFormProducts?.length || 0,
+        }));
+    }, [paymentForms]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -148,20 +155,7 @@ export default function Dashboard() {
         fetchPaymentForms();
     }, [user]);
 
-    // Transform payment forms into table data
-    useEffect(() => {
-        if (paymentForms.length > 0) {
-            const transformedData = paymentForms.map((form) => ({
-                id: form.paymentFormId,
-                formTitle: form.paymentFormTitle,
-                formDescription: form.paymentFormDescription,
-                productCount: form.paymentFormProducts?.length || 0,
-            }));
-            setTableData(transformedData);
-        } else {
-            setTableData([]);
-        }
-    }, [paymentForms]);
+
 
     // Calculate statistics
     const calculateStats = () => {
