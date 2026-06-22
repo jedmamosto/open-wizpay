@@ -6,11 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import { auth, db } from '@/firebase/config';
+import { auth } from '@/firebase/config';
 import { LoginData } from '@/schemas/login-data';
 import { SignUps } from '@/schemas/signups';
-import { AuthError, signInWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { AuthError, signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 
@@ -55,25 +54,6 @@ function AuthTabsContent() {
         return usernameRegex.test(username);
     };
 
-    // Check if email already exists in Firestore or Firebase Auth
-    const checkEmailExists = async (email: string): Promise<boolean> => {
-        try {
-            // Check in Firebase Auth
-            const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-            if (signInMethods.length > 0) return true;
-
-            // Check in Firestore users collection
-            const usersRef = collection(db, 'users');
-            const userQuery = query(usersRef, where('userEmail', '==', email));
-            const userSnapshot = await getDocs(userQuery);
-
-            return !userSnapshot.empty;
-        } catch (error) {
-            console.error('Error checking email existence:', error);
-            return false;
-        }
-    };
-
     // Form validations
     const validateLoginForm = (): boolean => {
         const newErrors: ValidationErrors = {};
@@ -102,11 +82,6 @@ function AuthTabsContent() {
             newErrors.signUpEmail = 'Email is required';
         } else if (!validateEmail(signUpData.signUpEmail)) {
             newErrors.signUpEmail = 'Please enter a valid email address';
-        } else {
-            const emailExists = await checkEmailExists(signUpData.signUpEmail);
-            if (emailExists) {
-                newErrors.signUpEmail = 'This email is already registered';
-            }
         }
 
         if (!signUpData.signUpPassword) {
@@ -133,30 +108,17 @@ function AuthTabsContent() {
         setErrors({});
 
         if (!validateLoginForm()) return;
-
         setIsLoading(true);
         try {
-            const userCredentials = await signInWithEmailAndPassword(
-                auth,
-                loginData.email,
-                loginData.password
-            );
-            if (userCredentials) {
-                router.replace('/admin');
-            }
+            await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
+            router.replace('/admin');
         } catch (error: any) {
-            console.error('Login error:', error);
-            switch (error.code) {
-                case 'auth/user-not-found':
-                case 'auth/wrong-password':
-                case 'auth/invalid-credential':
-                    setErrors({ general: 'Invalid email or password' });
-                    break;
-                case 'auth/too-many-requests':
-                    setErrors({ general: 'Too many attempts. Please try again later' });
-                    break;
-                default:
-                    setErrors({ general: 'Authentication failed. Please try again' });
+            console.error(error);
+            const err = error as AuthError;
+            if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                setErrors({ general: 'Invalid email or password' });
+            } else {
+                setErrors({ general: err.message || 'Login failed' });
             }
         } finally {
             setIsLoading(false);
@@ -185,17 +147,27 @@ function AuthTabsContent() {
             const result = await response.json();
 
             if (response.ok) {
-                // Auto login on successful registration
-                const userCredentials = await signInWithEmailAndPassword(
-                    auth,
-                    signUpData.signUpEmail,
-                    signUpData.signUpPassword
-                );
-                if (userCredentials) {
-                    router.replace('/admin');
+                // If register successfully, check if account is active
+                if (result.status === 'active') {
+                    // Auto login on successful active registration
+                    const userCredentials = await signInWithEmailAndPassword(
+                        auth,
+                        signUpData.signUpEmail,
+                        signUpData.signUpPassword
+                    );
+                    if (userCredentials) {
+                        router.replace('/admin');
+                    }
+                } else {
+                    // Account is pending approval (inactive)
+                    setErrors({ general: result.message || 'Registration successful. Waiting for admin approval.' });
                 }
             } else {
-                setErrors({ general: result.error || 'Registration failed' });
+                if (result.error && result.error.includes('already registered')) {
+                    setErrors({ signUpEmail: result.error });
+                } else {
+                    setErrors({ general: result.error || 'Registration failed' });
+                }
             }
         } catch (error) {
             console.error('Registration flow error:', error);

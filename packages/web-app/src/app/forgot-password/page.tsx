@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { auth } from '@/firebase/config';
-import queryDocument from '@/utils/queryDocument';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { useState } from 'react';
 
@@ -20,35 +19,23 @@ const ForgotPasswordPage = () => {
     const [buttonLoading, setButtonLoading] = useState(false);
     const [resetSent, setResetSent] = useState(false);
 
-    const emailExists = async () => {
-        try {
-            if (!email) return false;
-            const emailQuery = await queryDocument('users', 'userEmail', email);
-
-            if (!emailQuery) {
-                return false;
-            } else {
-                return true;
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
     const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
+        if (!email) {
+            setError(true);
+            return;
+        }
+
         setButtonLoading(true);
         try {
-            if (!email || !(await emailExists())) {
-                setError(true);
-                return;
-            }
             setError(false);
             await sendPasswordResetEmail(auth, email);
             setResetSent(true);
         } catch (error) {
-            console.error(error);
+            console.error('Password reset error:', error);
+            // Uniform response to prevent user enumeration
+            setResetSent(true);
         } finally {
             setButtonLoading(false);
         }

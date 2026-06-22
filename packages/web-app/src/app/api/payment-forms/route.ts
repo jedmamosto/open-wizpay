@@ -1,6 +1,5 @@
 import { FormAppearance, PaymentForm } from '@/schemas/payment-form';
 import deleteDocument from '@/utils/deleteDocument';
-import getCollection from '@/utils/getCollection';
 import updateDocument from '@/utils/updateDocument';
 import uploadDocument from '@/utils/uploadDocument';
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,90 +15,106 @@ const defaultAppearance: FormAppearance = {
     fontFamily: 'inter',
 };
 
-export const POST = async (request: NextRequest) => {
+// Helper to authenticate user via either API Key or Session Cookie
+async function getUserId(request: NextRequest): Promise<string | null> {
     const authHeader = request.headers.get('Authorization');
-    const apiKeyUserId = await validateApiKey(authHeader);
-
-    if (authHeader && !apiKeyUserId) {
-        return NextResponse.json({ error: 'Unauthorized: Invalid API Key' }, { status: 401 });
+    if (authHeader) {
+        const apiKeyUserId = await validateApiKey(authHeader);
+        return apiKeyUserId;
     }
 
-    const signUpFormData: PaymentForm = await request.json();
-    const {
-        paymentFormTitle,
-        paymentFormDescription,
-        paymentFormSuccessURL,
-        paymentFormCancelURL,
-        paymentFormWebhookURL,
-        paymentFormPaymongoPubKey,
-        paymentFormPaymongoSecKey,
-        paymentFormProducts,
-        userId: rawUserId,
-        appearance = defaultAppearance, // Include appearance with default if not provided
-    } = signUpFormData;
+    const sessionCookie = request.cookies.get('session')?.value;
+    if (!sessionCookie) {
+        return null;
+    }
+    try {
+        const decodedToken = await admin.auth().verifyIdToken(sessionCookie);
+        return decodedToken.uid;
+    } catch (error) {
+        console.error('Session token verification failed:', error);
+        return null;
+    }
+}
 
-    const userId = apiKeyUserId || rawUserId;
+export const POST = async (request: NextRequest) => {
+    const userId = await getUserId(request);
     if (!userId) {
-        return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const paymentFormData: PaymentForm = {
-        paymentFormTitle,
-        paymentFormDescription,
-        paymentFormSuccessURL,
-        paymentFormCancelURL,
-        paymentFormWebhookURL: paymentFormWebhookURL || '',
-        paymentFormPaymongoPubKey,
-        paymentFormPaymongoSecKey,
-        paymentFormProducts,
-        userId,
-        ...(appearance && { appearance }),
-    };
 
     try {
+        const signUpFormData: PaymentForm = await request.json();
+        const {
+            paymentFormTitle,
+            paymentFormDescription,
+            paymentFormSuccessURL,
+            paymentFormCancelURL,
+            paymentFormWebhookURL,
+            paymentFormPaymongoPubKey,
+            paymentFormPaymongoSecKey,
+            paymentFormProducts,
+            appearance = defaultAppearance,
+        } = signUpFormData;
+
+        const paymentFormData: PaymentForm = {
+            paymentFormTitle,
+            paymentFormDescription,
+            paymentFormSuccessURL,
+            paymentFormCancelURL,
+            paymentFormWebhookURL: paymentFormWebhookURL || '',
+            paymentFormPaymongoPubKey,
+            paymentFormPaymongoSecKey,
+            paymentFormProducts,
+            userId,
+            ...(appearance && { appearance }),
+        };
+
         await uploadDocument(collectionName, paymentFormData);
         return NextResponse.json({ message: 'POST to Firestore successful' });
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: 'POST to Firestore failed' });
+        return NextResponse.json({ error: 'POST to Firestore failed' }, { status: 500 });
     }
 };
 
 export const GET = async (request: NextRequest) => {
-    const authHeader = request.headers.get('Authorization');
-    const apiKeyUserId = await validateApiKey(authHeader);
-
-    if (authHeader && !apiKeyUserId) {
-        return NextResponse.json({ error: 'Unauthorized: Invalid API Key' }, { status: 401 });
+    const userId = await getUserId(request);
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
-        let paymentForms: any[] = [];
-        if (apiKeyUserId) {
-            // Filter by authenticated user's ID
-            const db = admin.firestore();
-            const snapshot = await db.collection(collectionName).where('userId', '==', apiKeyUserId).get();
-            paymentForms = snapshot.docs.map(doc => ({ [idFieldName]: doc.id, ...doc.data() }));
-        } else {
-            // Fallback for dashboard/unauthenticated admin (legacy behavior)
-            paymentForms = await getCollection(collectionName, idFieldName);
-        }
+        const db = admin.firestore();
+        const snapshot = await db.collection(collectionName).where('userId', '==', userId).get();
+        const paymentForms = snapshot.docs.map(doc => ({
+            [idFieldName]: doc.id,
+            ...doc.data()
+        })) as (PaymentForm & { paymentFormId: string })[];
 
-        // Ensure each form has appearance data
-        const formsWithAppearance = paymentForms.map((form) => {
-            if (!form.appearance) {
-                return {
-                    ...form,
-                    appearance: defaultAppearance,
-                };
+        // Mask sensitive merchant credentials and ensure appearance data
+        const processedForms = paymentForms.map((form) => {
+            const sanitized = { ...form };
+            
+            // Mask the Paymongo Secret Key
+            if (sanitized.paymentFormPaymongoSecKey) {
+                const len = sanitized.paymentFormPaymongoSecKey.length;
+                if (len > 8) {
+                    sanitized.paymentFormPaymongoSecKey = sanitized.paymentFormPaymongoSecKey.substring(0, 8) + '••••••••';
+                } else {
+                    sanitized.paymentFormPaymongoSecKey = '••••••••';
+                }
             }
-            return form;
+            
+            if (!sanitized.appearance) {
+                sanitized.appearance = defaultAppearance;
+            }
+            return sanitized;
         });
 
-        return NextResponse.json(formsWithAppearance);
+        return NextResponse.json(processedForms);
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: 'GET from Firestore failed' });
+        return NextResponse.json({ error: 'GET from Firestore failed' }, { status: 500 });
     }
 };
 
@@ -110,35 +125,40 @@ export const PATCH = async (request: NextRequest) => {
         return NextResponse.json({ error: 'No paymentFormId provided' }, { status: 400 });
     }
 
-    const authHeader = request.headers.get('Authorization');
-    const apiKeyUserId = await validateApiKey(authHeader);
-
-    if (authHeader && !apiKeyUserId) {
-        return NextResponse.json({ error: 'Unauthorized: Invalid API Key' }, { status: 401 });
+    const userId = await getUserId(request);
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
+        const db = admin.firestore();
+        const docRef = db.collection(collectionName).doc(paymentFormId);
+        const docSnap = await docRef.get();
+        if (!docSnap.exists) {
+            return NextResponse.json({ error: 'Payment form not found' }, { status: 404 });
+        }
+        
+        const existingForm = docSnap.data();
+
+        // Enforce ownership: only allow updates if the user owns the form
+        const isUnassigned = !existingForm?.userId;
+        const isFallbackUser = existingForm?.userId === 'test-user-mcp';
+        const isOwner = existingForm?.userId === userId;
+
+        if (!isOwner && !isUnassigned && !isFallbackUser) {
+            return NextResponse.json({ error: 'Forbidden: You do not own this payment form' }, { status: 403 });
+        }
+
         const paymentFormData: PaymentForm = await request.json();
 
-        // If authenticated via API Key, verify ownership of the form
-        if (apiKeyUserId) {
-            const db = admin.firestore();
-            const docSnap = await db.collection(collectionName).doc(paymentFormId).get();
-            if (!docSnap.exists) {
-                return NextResponse.json({ error: 'Payment form not found' }, { status: 404 });
-            }
-            const existingForm = docSnap.data();
-            
-            const isUnassigned = !existingForm?.userId;
-            const isFallbackUser = existingForm?.userId === 'test-user-mcp';
-            const isOwner = existingForm?.userId === apiKeyUserId;
-
-            if (!isOwner && !isUnassigned && !isFallbackUser) {
-                return NextResponse.json({ error: 'Forbidden: You do not own this payment form' }, { status: 403 });
-            }
-            // Enforce resolved userId
-            paymentFormData.userId = apiKeyUserId;
+        // If the submitted secret key is masked (i.e. contains bullet points), do not overwrite the existing key
+        const submittedSecKey = paymentFormData.paymentFormPaymongoSecKey;
+        if (submittedSecKey && (submittedSecKey.includes('••••') || submittedSecKey.includes('●') || submittedSecKey.includes('***'))) {
+            paymentFormData.paymentFormPaymongoSecKey = existingForm?.paymentFormPaymongoSecKey;
         }
+
+        // Enforce resolved userId
+        paymentFormData.userId = userId;
 
         // Ensure appearance data exists
         if (!paymentFormData.appearance) {
@@ -149,7 +169,7 @@ export const PATCH = async (request: NextRequest) => {
         return NextResponse.json({ message: 'PATCH to Firestore successful' });
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: 'PATCH to Firestore failed' });
+        return NextResponse.json({ error: 'PATCH to Firestore failed' }, { status: 500 });
     }
 };
 
@@ -160,29 +180,26 @@ export const DELETE = async (request: NextRequest) => {
         return NextResponse.json({ error: 'No paymentFormId provided' }, { status: 400 });
     }
 
-    const authHeader = request.headers.get('Authorization');
-    const apiKeyUserId = await validateApiKey(authHeader);
-
-    if (authHeader && !apiKeyUserId) {
-        return NextResponse.json({ error: 'Unauthorized: Invalid API Key' }, { status: 401 });
+    const userId = await getUserId(request);
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
-        if (apiKeyUserId) {
-            const db = admin.firestore();
-            const docSnap = await db.collection(collectionName).doc(paymentFormId).get();
-            if (!docSnap.exists) {
-                return NextResponse.json({ error: 'Payment form not found' }, { status: 404 });
-            }
-            const existingForm = docSnap.data();
-            
-            const isUnassigned = !existingForm?.userId;
-            const isFallbackUser = existingForm?.userId === 'test-user-mcp';
-            const isOwner = existingForm?.userId === apiKeyUserId;
+        const db = admin.firestore();
+        const docRef = db.collection(collectionName).doc(paymentFormId);
+        const docSnap = await docRef.get();
+        if (!docSnap.exists) {
+            return NextResponse.json({ error: 'Payment form not found' }, { status: 404 });
+        }
+        const existingForm = docSnap.data();
+        
+        const isUnassigned = !existingForm?.userId;
+        const isFallbackUser = existingForm?.userId === 'test-user-mcp';
+        const isOwner = existingForm?.userId === userId;
 
-            if (!isOwner && !isUnassigned && !isFallbackUser) {
-                return NextResponse.json({ error: 'Forbidden: You do not own this payment form' }, { status: 403 });
-            }
+        if (!isOwner && !isUnassigned && !isFallbackUser) {
+            return NextResponse.json({ error: 'Forbidden: You do not own this payment form' }, { status: 403 });
         }
 
         await deleteDocument(collectionName, paymentFormId);
@@ -191,7 +208,7 @@ export const DELETE = async (request: NextRequest) => {
         });
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: 'DELETE from Firestore failed' });
+        return NextResponse.json({ error: 'DELETE from Firestore failed' }, { status: 500 });
     }
 };
 

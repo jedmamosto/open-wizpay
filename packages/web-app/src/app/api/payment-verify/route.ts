@@ -1,6 +1,17 @@
 import queryDocument from '@/utils/queryDocument';
-import getCollection from '@/utils/getCollection';
 import { NextRequest, NextResponse } from 'next/server';
+import admin from '@/firebase/adminConfig';
+import { Product } from '@/schemas/payment-form';
+
+interface StoredCheckoutSession {
+    checkoutSessionId: string;
+    paymentFormId: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    selectedProducts: Product[];
+    createdAt: string;
+}
 
 export const GET = async (request: NextRequest) => {
     try {
@@ -49,21 +60,23 @@ export const GET = async (request: NextRequest) => {
             secretKey.substring(0, 10) + '...'
         );
 
-        // Get all checkout sessions from our database
-        const storedSessions = await getCollection('checkout-sessions', 'id');
-        console.log('Found', storedSessions.length, 'stored checkout sessions');
+        // Query database for checkout sessions matching this paymentFormId
+        const db = admin.firestore();
+        const snapshot = await db.collection('checkout-sessions')
+            .where('paymentFormId', '==', paymentFormId)
+            .get();
+
+        const storedSessions = snapshot.docs.map(doc => ({
+            checkoutSessionId: doc.id,
+            ...doc.data()
+        })) as StoredCheckoutSession[];
+        console.log('Found', storedSessions.length, 'stored checkout sessions for form:', paymentFormId);
 
         // Find the most recent session for this form (within last 10 minutes)
         const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const recentStoredSession = storedSessions
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .filter((session: any) =>
-                session.paymentFormId === paymentFormId &&
-                session.createdAt > tenMinutesAgo
-            )
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+            .filter((session) => session.createdAt > tenMinutesAgo)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
         if (!recentStoredSession) {
             console.log('No recent checkout session found for form:', paymentFormId);
@@ -117,8 +130,7 @@ export const GET = async (request: NextRequest) => {
                         paymentFormId: paymentFormId,
                         products: recentStoredSession.selectedProducts,
                         totalAmount: recentStoredSession.selectedProducts?.reduce(
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            (total: number, product: any) => total + (product.productPrice || 0),
+                            (total: number, product: Product) => total + (product.productPrice || 0),
                             0
                         ) || 0,
                         currency: 'PHP',
