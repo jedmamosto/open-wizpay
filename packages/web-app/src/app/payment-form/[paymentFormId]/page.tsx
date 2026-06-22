@@ -179,7 +179,10 @@ function PaymentFormPage({
     };
 
     useEffect(() => {
-        fetchData(paymentFormId);
+        const handle = setTimeout(() => {
+            fetchData(paymentFormId);
+        }, 0);
+        return () => clearTimeout(handle);
     }, [paymentFormId]);
 
     // Load custom Google Font dynamically if not one of the presets

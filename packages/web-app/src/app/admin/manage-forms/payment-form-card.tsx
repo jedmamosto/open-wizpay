@@ -48,65 +48,6 @@ import Link from 'next/link';
 import { useState } from 'react';
 import EditPaymentFormCard from './edit-payment-form-card';
 
-interface PaymentFormCardProps {
-    paymentFormData: PaymentForm;
-    onEdit: (updatedPaymentForm: PaymentForm) => void;
-    onDelete: (paymentFormId: string) => void;
-}
-
-export default function PaymentFormCard({
-    paymentFormData,
-    onEdit,
-    onDelete,
-}: PaymentFormCardProps) {
-    // State management
-    const [isExpanded, setIsExpanded] = useState<string | null>(null);
-    const [copiedField, setCopiedField] = useState<string | null>(null);
-    const [isEditing, setIsEditing] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [currentFormData, setCurrentFormData] =
-        useState<PaymentForm>(paymentFormData);
-
-    // Guard clause for missing data
-    if (!currentFormData?.paymentFormId) {
-        return (
-            <Card className="w-full bg-[#001208]/50 border border-[#1d3a2c]">
-                <CardContent className="flex items-center justify-center p-6">
-                    <div className="text-center space-y-2">
-                        <AlertCircle className="mx-auto h-8 w-8 text-[#a6d0b5]/50 animate-pulse" />
-                        <p className="text-sm text-[#a6d0b5]/70">
-                            No payment form data available
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
-        );
-    }
-
-    // Destructure form data for easier access
-    const {
-        paymentFormId,
-        paymentFormTitle,
-        paymentFormDescription,
-        paymentFormSuccessURL,
-        paymentFormCancelURL,
-        paymentFormWebhookURL,
-        paymentFormPaymongoPubKey,
-        paymentFormPaymongoSecKey,
-        paymentFormProducts,
-    } = currentFormData;
-
-    // Helper function to copy text to clipboard with error handling
-    const copyToClipboard = async (text: string, field: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            setCopiedField(field);
-            setTimeout(() => setCopiedField(null), 2000);
-        } catch (err) {
-            console.error('Failed to copy text:', err);
-        }
-    };
-
 // Secure field component with copy functionality
 interface SecureFieldProps {
     label: string;
@@ -186,6 +127,67 @@ function ProductCard({
         </div>
     );
 }
+
+interface PaymentFormCardProps {
+    paymentFormData: PaymentForm;
+    onEdit: (updatedPaymentForm: PaymentForm) => void;
+    onDelete: (paymentFormId: string) => void;
+}
+
+export default function PaymentFormCard({
+    paymentFormData,
+    onEdit,
+    onDelete,
+}: PaymentFormCardProps) {
+    // State management
+    const [isExpanded, setIsExpanded] = useState<string | null>(null);
+    const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [currentFormData, setCurrentFormData] =
+        useState<PaymentForm>(paymentFormData);
+
+    // Guard clause for missing data
+    if (!currentFormData?.paymentFormId) {
+        return (
+            <Card className="w-full bg-[#001208]/50 border border-[#1d3a2c]">
+                <CardContent className="flex items-center justify-center p-6">
+                    <div className="text-center space-y-2">
+                        <AlertCircle className="mx-auto h-8 w-8 text-[#a6d0b5]/50 animate-pulse" />
+                        <p className="text-sm text-[#a6d0b5]/70">
+                            No payment form data available
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    // Destructure form data for easier access
+    const {
+        paymentFormId,
+        paymentFormTitle,
+        paymentFormDescription,
+        paymentFormSuccessURL,
+        paymentFormCancelURL,
+        paymentFormWebhookURL,
+        paymentFormPaymongoPubKey,
+        paymentFormPaymongoSecKey,
+        paymentFormProducts,
+    } = currentFormData;
+
+    // Helper function to copy text to clipboard with error handling
+    const copyToClipboard = async (text: string, field: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedField(field);
+            setTimeout(() => setCopiedField(null), 2000);
+        } catch (err) {
+            console.error('Failed to copy text:', err);
+        }
+    };
+
+
 
     // Handle form editing
     const handleEditSubmit = (updatedPaymentForm: PaymentForm) => {

@@ -27,13 +27,14 @@ export function BasicInfoTab({
     onProductsChange,
 }: BasicInfoTabProps) {
     // Local state for products manipulation
-    const [products, setProducts] = useState<Product[]>([]);
+    const [products, setProducts] = useState<Product[]>(formData.paymentFormProducts || []);
+    const [prevProductsJson, setPrevProductsJson] = useState(() => JSON.stringify(formData.paymentFormProducts || []));
 
-    useEffect(() => {
-        if (formData.paymentFormProducts) {
-            setProducts(formData.paymentFormProducts);
-        }
-    }, [JSON.stringify(formData.paymentFormProducts)]); // Use JSON.stringify to compare values, not references
+    const currentProductsJson = JSON.stringify(formData.paymentFormProducts || []);
+    if (currentProductsJson !== prevProductsJson) {
+        setProducts(formData.paymentFormProducts || []);
+        setPrevProductsJson(currentProductsJson);
+    }
 
     // Product management functions
     const addProduct = () => {

@@ -27,6 +27,8 @@ This workspace is the parent repository for the **WizPay** project ecosystem, a 
 - **Component-Driven Styling**: Keep styling consistent with tailwind.config.ts configuration tokens.
 - **Sub-Project Documentation**: Maintain individual `AGENTS.md` files in `packages/web-app` and `packages/mcp-server` for project-specific instructions.
 - **Publishing & Builds**: When modifying `packages/mcp-server` tools or schemas, build the project and publish updates to npm (`@jedmamosto/wizpay-mcp-setup`) to keep MCP client integrations updated.
+- **Open-Source PR Governance**: All changes must go through pull requests. Direct pushes to `main` are forbidden. Pull requests must pass the CI workflow (`ci.yml`) with 1+ approval before merging.
+- **Secret Scanning**: GitHub Secret Scanning and Push Protection must remain active. Do not commit or push live credentials (e.g., Paymongo API keys, Firebase service accounts). Use environment variables for local configuration.
 
 ## 5. Common Development Commands
 - **Root-level Operations**:
