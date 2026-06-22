@@ -17,7 +17,7 @@ import {
     Plus,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DataTable } from './data-table';
 
 // Reusable stat card component
@@ -103,7 +103,7 @@ export default function Dashboard() {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [paymentForms, setPaymentForms] = useState<PaymentForm[]>([]);
 
-    const tableData = React.useMemo<TableData[]>(() => {
+    const tableData = useMemo<TableData[]>(() => {
         return paymentForms.map((form) => ({
             id: form.paymentFormId,
             formTitle: form.paymentFormTitle,
