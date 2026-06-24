@@ -4,6 +4,7 @@ import { Product } from '@/schemas/payment-form';
 import queryDocument from '@/utils/queryDocument';
 import uploadDocument from '@/utils/uploadDocument';
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 export const POST = async (request: NextRequest) => {
     const url = new URL(request.url);
@@ -33,15 +34,29 @@ export const POST = async (request: NextRequest) => {
         if (!paymentFormData)
             return NextResponse.json({ error: 'No payment form data' });
 
-        // Use selected products instead of all products
-        const lineItems = selectedProducts.map((product: Product) => ({
-            currency: 'PHP',
-            amount: product.productPrice * 100,
-            description:
-                product.productDescription || 'No description provided',
-            name: product.productName,
-            quantity: 1,
-        }));
+        const paymentToken = crypto.randomUUID();
+
+        // Securely look up prices from database
+        const lineItems = [];
+        for (const clientProduct of selectedProducts) {
+            const dbProduct = paymentFormData.paymentFormProducts?.find(
+                (p: Product) => 
+                    (p.productId && p.productId === clientProduct.productId) || 
+                    p.productName === clientProduct.productName
+            );
+            if (!dbProduct) {
+                return NextResponse.json({ 
+                    error: `Invalid product selection: "${clientProduct.productName}" is not on this form.` 
+                }, { status: 400 });
+            }
+            lineItems.push({
+                currency: 'PHP',
+                amount: dbProduct.productPrice * 100,
+                description: dbProduct.productDescription || 'No description provided',
+                name: dbProduct.productName,
+                quantity: 1,
+            });
+        }
         // console.log('Line Items: ', lineItems);
 
         const secretKey = paymentFormData.paymentFormPaymongoSecKey;
@@ -78,7 +93,7 @@ export const POST = async (request: NextRequest) => {
                                 'paymaya',
                             ],
                             cancel_url: paymentFormData.paymentFormCancelURL,
-                            success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payment-verify?form=${paymentFormId}`,
+                            success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payment-verify?form=${paymentFormId}&token=${paymentToken}`,
                             metadata: {
                                 payment_form_id: paymentFormId,
                                 webhook_url: paymentFormData.paymentFormWebhookURL,
@@ -111,7 +126,8 @@ export const POST = async (request: NextRequest) => {
                     customerPhone: checkoutPhone,
                     selectedProducts,
                     createdAt: new Date().toISOString(),
-                    status: 'pending'
+                    status: 'pending',
+                    paymentToken
                 });
                 console.log('Checkout session stored:', checkoutSessionId);
             } catch (error) {

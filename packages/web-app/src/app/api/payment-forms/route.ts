@@ -3,38 +3,16 @@ import deleteDocument from '@/utils/deleteDocument';
 import updateDocument from '@/utils/updateDocument';
 import uploadDocument from '@/utils/uploadDocument';
 import { NextRequest, NextResponse } from 'next/server';
-import { validateApiKey } from '@/utils/apiKeyAuth';
 import admin from '@/firebase/adminConfig';
+import { getUserId } from '@/utils/authHelpers';
 
 const collectionName = 'payment-forms';
 const idFieldName = 'paymentFormId';
 
-// Default appearance settings
 const defaultAppearance: FormAppearance = {
     colorScheme: 'slate',
     fontFamily: 'inter',
 };
-
-// Helper to authenticate user via either API Key or Session Cookie
-async function getUserId(request: NextRequest): Promise<string | null> {
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader) {
-        const apiKeyUserId = await validateApiKey(authHeader);
-        return apiKeyUserId;
-    }
-
-    const sessionCookie = request.cookies.get('session')?.value;
-    if (!sessionCookie) {
-        return null;
-    }
-    try {
-        const decodedToken = await admin.auth().verifyIdToken(sessionCookie);
-        return decodedToken.uid;
-    } catch (error) {
-        console.error('Session token verification failed:', error);
-        return null;
-    }
-}
 
 export const POST = async (request: NextRequest) => {
     const userId = await getUserId(request);
@@ -141,11 +119,9 @@ export const PATCH = async (request: NextRequest) => {
         const existingForm = docSnap.data();
 
         // Enforce ownership: only allow updates if the user owns the form
-        const isUnassigned = !existingForm?.userId;
-        const isFallbackUser = existingForm?.userId === 'test-user-mcp';
         const isOwner = existingForm?.userId === userId;
 
-        if (!isOwner && !isUnassigned && !isFallbackUser) {
+        if (!isOwner) {
             return NextResponse.json({ error: 'Forbidden: You do not own this payment form' }, { status: 403 });
         }
 
@@ -194,11 +170,9 @@ export const DELETE = async (request: NextRequest) => {
         }
         const existingForm = docSnap.data();
         
-        const isUnassigned = !existingForm?.userId;
-        const isFallbackUser = existingForm?.userId === 'test-user-mcp';
         const isOwner = existingForm?.userId === userId;
 
-        if (!isOwner && !isUnassigned && !isFallbackUser) {
+        if (!isOwner) {
             return NextResponse.json({ error: 'Forbidden: You do not own this payment form' }, { status: 403 });
         }
 
