@@ -1,4 +1,5 @@
-import { UserStatus } from '@/schemas/users';
+import { UserRole, UserStatus } from '@/schemas/users';
+import { getAuthenticatedUser } from '@/utils/authHelpers';
 import queryDocument from '@/utils/queryDocument';
 import updateDocument from '@/utils/updateDocument';
 import { NextRequest, NextResponse } from 'next/server';
@@ -11,6 +12,11 @@ interface UpdateStatusRequest {
 
 export async function PATCH(request: NextRequest) {
     try {
+        const caller = await getAuthenticatedUser(request);
+        if (!caller || (caller.role !== UserRole.admin && caller.role !== UserRole.superAdmin)) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
         const { searchParams } = new URL(request.url);
         const uid = searchParams.get('uid');
 
@@ -35,11 +41,16 @@ export async function PATCH(request: NextRequest) {
 
         if (!user?.queryId)
             return NextResponse.json(
-                { error: 'User ID is required' },
-                { status: 400 }
+                { error: 'User not found' },
+                { status: 404 }
             );
 
-        // console.log('User ID:', user?.id)
+        if (caller.uid === uid && newUserStatus.userStatus === UserStatus.inactive) {
+            return NextResponse.json(
+                { error: 'Cannot deactivate your own account' },
+                { status: 400 }
+            );
+        }
 
         await updateDocument(collectionName, user.queryId, newUserStatus);
 

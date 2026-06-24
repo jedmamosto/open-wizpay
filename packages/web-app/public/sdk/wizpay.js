@@ -339,7 +339,7 @@
         // Inject custom raw CSS block if provided
         if (appearance.customCSS) {
             const customStyleTag = document.createElement('style');
-            customStyleTag.innerHTML = appearance.customCSS;
+            customStyleTag.textContent = appearance.customCSS;
             document.head.appendChild(customStyleTag);
         }
 

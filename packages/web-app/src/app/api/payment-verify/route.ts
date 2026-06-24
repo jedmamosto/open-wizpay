@@ -53,35 +53,27 @@ export const GET = async (request: NextRequest) => {
             );
         }
 
-        // Query our database for recent checkout sessions for this payment form
-        console.log('Querying our database for checkout sessions for form:', paymentFormId);
-        console.log(
-            'Using secret key prefix:',
-            secretKey.substring(0, 10) + '...'
-        );
+        const token = url.searchParams.get('token');
 
-        // Query database for checkout sessions matching this paymentFormId
-        const db = admin.firestore();
-        const snapshot = await db.collection('checkout-sessions')
-            .where('paymentFormId', '==', paymentFormId)
-            .get();
-
-        const storedSessions = snapshot.docs.map(doc => ({
-            checkoutSessionId: doc.id,
-            ...doc.data()
-        })) as StoredCheckoutSession[];
-        console.log('Found', storedSessions.length, 'stored checkout sessions for form:', paymentFormId);
-
-        // Find the most recent session for this form (within last 10 minutes)
-        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-        const recentStoredSession = storedSessions
-            .filter((session) => session.createdAt > tenMinutesAgo)
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-
-        if (!recentStoredSession) {
-            console.log('No recent checkout session found for form:', paymentFormId);
+        if (!token) {
+            console.log('Missing verification token for form:', paymentFormId);
             return NextResponse.redirect(paymentFormData.paymentFormCancelURL);
         }
+
+        console.log('Querying database for checkout session with token:', token);
+        const sessionResult = await queryDocument('checkout-sessions', 'paymentToken', token);
+
+        if (!sessionResult) {
+            console.log('No checkout session found for token:', token);
+            return NextResponse.redirect(paymentFormData.paymentFormCancelURL);
+        }
+
+        const dbSessionData = sessionResult.queryData as any;
+        const recentStoredSession = {
+            ...dbSessionData,
+            checkoutSessionId: dbSessionData.checkoutSessionId,
+            firestoreDocId: sessionResult.queryId
+        };
 
         console.log('Found stored session:', recentStoredSession.checkoutSessionId);
 
@@ -114,9 +106,16 @@ export const GET = async (request: NextRequest) => {
 
         // Check if payment was successful
         if (paymentStatus === 'succeeded') {
+            const originalSuccessUrl = paymentFormData.paymentFormSuccessURL;
+
+            // Enforce idempotency: check if already processed
+            if (dbSessionData.status === 'paid') {
+                console.log('Session already paid and processed:', recentStoredSession.checkoutSessionId);
+                return NextResponse.redirect(originalSuccessUrl);
+            }
+
             // Payment successful - trigger external webhook
             const webhookUrl = paymentFormData.paymentFormWebhookURL;
-            const originalSuccessUrl = paymentFormData.paymentFormSuccessURL;
 
             if (webhookUrl) {
                 try {
@@ -152,8 +151,20 @@ export const GET = async (request: NextRequest) => {
                     );
                 } catch (error) {
                     console.error('Failed to send webhook:', error);
-                    // Continue with redirect even if webhook fails
+                    // Continue even if webhook fails
                 }
+            }
+
+            // Mark session as paid in database to guarantee idempotency
+            try {
+                const db = admin.firestore();
+                await db.collection('checkout-sessions').doc(recentStoredSession.firestoreDocId).update({
+                    status: 'paid',
+                    paidAt: new Date().toISOString()
+                });
+                console.log('Checkout session marked as paid in database:', recentStoredSession.firestoreDocId);
+            } catch (dbError) {
+                console.error('Failed to update checkout session status:', dbError);
             }
 
             // Redirect to original success URL
