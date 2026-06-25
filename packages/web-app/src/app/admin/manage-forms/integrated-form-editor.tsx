@@ -3,10 +3,9 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { auth } from '@/firebase/config';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { FormAppearance, PaymentForm, Product } from '@/schemas/payment-form';
-import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppearanceTab } from './appearance-tab';
@@ -54,23 +53,21 @@ export function IntegratedFormEditor({
         }
     );
 
+    const { user } = useAuth();
+
     // Auth check - only updates userId field, nothing else
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setFormData((prev) => ({ ...prev, userId: user.uid }));
-            } else {
-                router.push('/login');
-                toast({
-                    variant: 'destructive',
-                    title: 'Authentication required',
-                    description: 'Please login to create a payment form',
-                });
-            }
-        });
-
-        return () => unsubscribe();
-    }, [router, toast]);
+        if (user) {
+            setFormData((prev) => ({ ...prev, userId: user.uid }));
+        } else {
+            router.push('/login');
+            toast({
+                variant: 'destructive',
+                title: 'Authentication required',
+                description: 'Please login to create a payment form',
+            });
+        }
+    }, [user, router, toast]);
 
     // Field update handlers - each only updates its specific part of the state
     const handleBasicInfoChange = (field: string, value: string | number) => {

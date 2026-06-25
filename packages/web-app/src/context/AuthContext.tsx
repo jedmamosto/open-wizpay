@@ -1,7 +1,5 @@
 'use client';
 
-import { auth } from '@/firebase/config';
-import { User, onAuthStateChanged, signOut } from 'firebase/auth';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import React, {
@@ -13,104 +11,70 @@ import React, {
     useState,
 } from 'react';
 
+export interface CustomUser {
+    uid: string;
+    email: string;
+    name: string;
+    role: string;
+    status: string;
+}
+
 interface AuthContextType {
-    user: User | null;
+    user: CustomUser | null;
     userRole: string | null;
     userStatus: string | null;
     loading: boolean;
     signOut: () => Promise<void>;
+    checkSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [userRole, setUserRole] = useState<string | null>(null);
-    const [userStatus, setUserStatus] = useState<string | null>(null);
+    const [user, setUser] = useState<CustomUser | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
-    // Auth state listener
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            try {
-                setLoading(true); // Ensure loading is true while we fetch everything
-
-                if (user) {
-                    const token = await user.getIdToken();
-                    Cookies.set('session', token, {
-                        secure: true,
-                        sameSite: 'strict',
-                        expires: 7,
+    const checkSession = useCallback(async () => {
+        try {
+            const response = await fetch('/api/auth/me');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.user) {
+                    setUser({
+                        uid: 'admin-user-id', // Static uid for compatibility with existing dashboard forms queries
+                        email: data.user.email,
+                        name: data.user.name,
+                        role: data.user.role,
+                        status: data.user.status,
                     });
-
-                    // Fetch user credentials
-                    const fetchUserCreds = await fetch(
-                        `/api/user-creds?uid=${user.uid}`
-                    );
-                    if (!fetchUserCreds.ok) {
-                        throw new Error('Failed to fetch user credentials');
-                    }
-
-                    const userCreds = await fetchUserCreds.json();
-
-                    // Update all states at once
-                    setUser(user);
-                    setUserStatus(userCreds.userStatus || null);
-                    setUserRole(userCreds.userRole || null);
                 } else {
-                    // Clear all states at once
                     setUser(null);
-                    setUserRole(null);
-                    setUserStatus(null);
                     Cookies.remove('session');
                 }
-            } catch (error) {
-                console.error('Auth state handling error:', error);
-                // Clear states on error
+            } else {
                 setUser(null);
-                setUserRole(null);
-                setUserStatus(null);
-            } finally {
-                setLoading(false);
+                Cookies.remove('session');
             }
-        });
-
-        return () => unsubscribe();
+        } catch (error) {
+            console.error('Check session error:', error);
+            setUser(null);
+            Cookies.remove('session');
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    // Token refresh logic
+    // Check auth session status on mount
     useEffect(() => {
-        const handleTokenRefresh = setInterval(
-            async () => {
-                const user = auth.currentUser;
-                if (user) {
-                    try {
-                        const token = await user.getIdToken(true); // Force token refresh
-                        if (Cookies.get('session') !== token) {
-                            Cookies.set('session', token, {
-                                secure: true,
-                                sameSite: 'strict',
-                                expires: 7,
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Error refreshing token:', error);
-                    }
-                }
-            },
-            10 * 60 * 1000
-        ); // 10 minutes
-
-        // Cleanup interval on unmount
-        return () => clearInterval(handleTokenRefresh);
-    }, []);
+        checkSession();
+    }, [checkSession]);
 
     const handleSignOut = useCallback(async () => {
         try {
-            await signOut(auth);
+            await fetch('/api/auth/logout', { method: 'POST' });
             Cookies.remove('session');
-            // console.log('Sign out successful');
+            setUser(null);
             router.push('/login');
         } catch (error) {
             console.error('Error signing out:', error);
@@ -120,12 +84,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const contextValue = useMemo(
         () => ({
             user,
-            userRole,
-            userStatus,
+            userRole: user ? user.role : null,
+            userStatus: user ? user.status : null,
             loading,
             signOut: handleSignOut,
+            checkSession,
         }),
-        [user, userRole, userStatus, loading, handleSignOut]
+        [user, loading, handleSignOut, checkSession]
     );
 
     return (

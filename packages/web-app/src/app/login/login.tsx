@@ -1,177 +1,48 @@
 'use client';
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import React, { Suspense, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/AuthContext';
-import { auth } from '@/firebase/config';
-import { LoginData } from '@/schemas/login-data';
-import { SignUps } from '@/schemas/signups';
-import { AuthError, signInWithEmailAndPassword } from 'firebase/auth';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, Suspense } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-// Custom types for form validation errors
-type ValidationErrors = {
-    email?: string;
-    password?: string;
-    signUpName?: string;
-    signUpEmail?: string;
-    signUpPassword?: string;
-    general?: string;
-};
-
-function AuthTabsContent() {
+function AuthContent() {
+    const { user, signOut, checkSession } = useAuth();
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'login';
-    const [activeTab, setActiveTab] = useState<string>(defaultTab);
-
-    const { user, signOut } = useAuth();
-
-    // State management for login & signup forms
-    const [loginData, setLoginData] = useState<LoginData>({ email: '', password: '' });
-    const [signUpData, setSignUpData] = useState<SignUps>({
-        signUpName: '',
-        signUpEmail: '',
-        signUpPassword: '',
-    });
-
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [errors, setErrors] = useState<ValidationErrors>({});
 
-    // Email validation using regex
-    const validateEmail = (email: string): boolean => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
-
-    // Username validation using regex
-    const validateUsername = (username: string): boolean => {
-        const usernameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
-        return usernameRegex.test(username);
-    };
-
-    // Form validations
-    const validateLoginForm = (): boolean => {
-        const newErrors: ValidationErrors = {};
-        if (!loginData.email) {
-            newErrors.email = 'Email is required';
-        } else if (!validateEmail(loginData.email)) {
-            newErrors.email = 'Please enter a valid email address';
-        }
-        if (!loginData.password) {
-            newErrors.password = 'Password is required';
-        }
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const validateSignUpForm = async (): Promise<boolean> => {
-        const newErrors: ValidationErrors = {};
-
-        if (!signUpData.signUpName) {
-            newErrors.signUpName = 'Username is required';
-        } else if (!validateUsername(signUpData.signUpName)) {
-            newErrors.signUpName = 'Username must be 3-20 characters (letters, numbers, underscores, hyphens)';
-        }
-
-        if (!signUpData.signUpEmail) {
-            newErrors.signUpEmail = 'Email is required';
-        } else if (!validateEmail(signUpData.signUpEmail)) {
-            newErrors.signUpEmail = 'Please enter a valid email address';
-        }
-
-        if (!signUpData.signUpPassword) {
-            newErrors.signUpPassword = 'Password is required';
-        } else {
-            const passwordErrors: string[] = [];
-            if (signUpData.signUpPassword.length < 8) passwordErrors.push('at least 8 characters');
-            if (!/[A-Z]/.test(signUpData.signUpPassword)) passwordErrors.push('one uppercase letter');
-            if (!/[a-z]/.test(signUpData.signUpPassword)) passwordErrors.push('one lowercase letter');
-            if (!/[0-9]/.test(signUpData.signUpPassword)) passwordErrors.push('one number');
-
-            if (passwordErrors.length > 0) {
-                newErrors.signUpPassword = `Password must contain ${passwordErrors.join(', ')}`;
-            }
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    // Form submission handlers
     const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setErrors({});
+        setError(null);
 
-        if (!validateLoginForm()) return;
-        setIsLoading(true);
-        try {
-            await signInWithEmailAndPassword(auth, loginData.email, loginData.password);
-            router.replace('/admin');
-        } catch (error: any) {
-            console.error(error);
-            const err = error as AuthError;
-            if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-                setErrors({ general: 'Invalid email or password' });
-            } else {
-                setErrors({ general: err.message || 'Login failed' });
-            }
-        } finally {
-            setIsLoading(false);
+        if (!email || !password) {
+            setError('Please fill in all fields');
+            return;
         }
-    };
-
-    const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setErrors({});
 
         setIsLoading(true);
         try {
-            const isValid = await validateSignUpForm();
-            if (!isValid) {
-                setIsLoading(false);
-                return;
-            }
-
-            // Call internal POST endpoint to register user (bypasses approval)
-            const response = await fetch('/api/signups', {
+            const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(signUpData),
+                body: JSON.stringify({ email, password }),
             });
 
-            const result = await response.json();
+            const data = await response.json();
 
             if (response.ok) {
-                // If register successfully, check if account is active
-                if (result.status === 'active') {
-                    // Auto login on successful active registration
-                    const userCredentials = await signInWithEmailAndPassword(
-                        auth,
-                        signUpData.signUpEmail,
-                        signUpData.signUpPassword
-                    );
-                    if (userCredentials) {
-                        router.replace('/admin');
-                    }
-                } else {
-                    // Account is pending approval (inactive)
-                    setErrors({ general: result.message || 'Registration successful. Waiting for admin approval.' });
-                }
+                await checkSession();
+                router.replace('/admin');
             } else {
-                if (result.error && result.error.includes('already registered')) {
-                    setErrors({ signUpEmail: result.error });
-                } else {
-                    setErrors({ general: result.error || 'Registration failed' });
-                }
+                setError(data.error || 'Invalid email or password');
             }
-        } catch (error) {
-            console.error('Registration flow error:', error);
-            setErrors({ general: 'Failed to complete registration. Please try again.' });
+        } catch (err) {
+            console.error('Login error:', err);
+            setError('An error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -226,152 +97,49 @@ function AuthTabsContent() {
             </div>
 
             <div className="space-y-4">
-                {errors.general && (
-                    <Alert variant="destructive" className="mb-4 bg-red-950/50 border-red-900 text-red-200">
-                        <AlertDescription>{errors.general}</AlertDescription>
+                {error && (
+                    <Alert variant="destructive" className="bg-red-950/50 border-red-900 text-red-200">
+                        <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 )}
 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 bg-[#001208] border border-[#1d3a2c] p-1 h-10 rounded-lg">
-                        <TabsTrigger
-                            value="login"
-                            className="data-[state=active]:bg-[#ccf15a] data-[state=active]:text-[#161e00] text-[#c5c9b1] font-bold text-xs rounded-md transition-all uppercase"
-                        >
-                            Sign In
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="signup"
-                            className="data-[state=active]:bg-[#ccf15a] data-[state=active]:text-[#161e00] text-[#c5c9b1] font-bold text-xs rounded-md transition-all uppercase"
-                        >
-                            Register
-                        </TabsTrigger>
-                    </TabsList>
+                <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-1">
+                        <Input
+                            id="email"
+                            placeholder="Email Address"
+                            type="email"
+                            value={email}
+                            onChange={(e) => {
+                                setEmail(e.target.value);
+                                if (error) setError(null);
+                            }}
+                            className="bg-[#001208] border-[#1d3a2c] text-white placeholder:text-[#c5c9b1]/40 focus:ring-[#ccf15a] focus:border-[#ccf15a] min-h-[44px] rounded-lg text-sm"
+                        />
+                    </div>
 
-                    {/* SIGN IN TAB */}
-                    <TabsContent value="login" className="space-y-3 pt-3">
-                        <form onSubmit={handleSignIn} className="space-y-3">
-                            <div className="space-y-1">
-                                <Input
-                                    id="email"
-                                    placeholder="Email Address"
-                                    value={loginData.email}
-                                    onChange={(e) => {
-                                        setLoginData({ ...loginData, email: e.target.value });
-                                        if (errors.email) setErrors({ ...errors, email: undefined });
-                                    }}
-                                    className={cn(
-                                        "bg-[#001208] border-[#1d3a2c] text-white placeholder:text-[#c5c9b1]/40 focus:ring-[#ccf15a] focus:border-[#ccf15a] min-h-[44px] rounded-lg text-sm",
-                                        errors.email ? 'border-red-500 focus:ring-red-500' : ''
-                                    )}
-                                />
-                                {errors.email && (
-                                    <p className="text-xs text-red-400 font-medium">{errors.email}</p>
-                                )}
-                            </div>
+                    <div className="space-y-1">
+                        <Input
+                            id="password"
+                            placeholder="Password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                if (error) setError(null);
+                            }}
+                            className="bg-[#001208] border-[#1d3a2c] text-white placeholder:text-[#c5c9b1]/40 focus:ring-[#ccf15a] focus:border-[#ccf15a] min-h-[44px] rounded-lg text-sm"
+                        />
+                    </div>
 
-                            <div className="space-y-1">
-                                <Input
-                                    id="password"
-                                    placeholder="Password"
-                                    type="password"
-                                    value={loginData.password}
-                                    onChange={(e) => {
-                                        setLoginData({ ...loginData, password: e.target.value });
-                                        if (errors.password) setErrors({ ...errors, password: undefined });
-                                    }}
-                                    className={cn(
-                                        "bg-[#001208] border-[#1d3a2c] text-white placeholder:text-[#c5c9b1]/40 focus:ring-[#ccf15a] focus:border-[#ccf15a] min-h-[44px] rounded-lg text-sm",
-                                        errors.password ? 'border-red-500 focus:ring-red-500' : ''
-                                    )}
-                                />
-                                {errors.password && (
-                                    <p className="text-xs text-red-400 font-medium">{errors.password}</p>
-                                )}
-                            </div>
-
-                            <Button
-                                className="h-11 w-full bg-[#ccf15a] hover:bg-[#b0d440] text-[#161e00] font-bold text-sm transition-all duration-300 transform hover:scale-[1.01] uppercase tracking-wider mt-1"
-                                type="submit"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? 'Signing In...' : 'Sign In'}
-                            </Button>
-                        </form>
-                    </TabsContent>
-
-                    {/* REGISTER/SIGNUP TAB */}
-                    <TabsContent value="signup" className="space-y-3 pt-3">
-                        <form onSubmit={handleSignUp} className="space-y-3">
-                            <div className="space-y-1">
-                                <Input
-                                    id="signUpName"
-                                    placeholder="Username"
-                                    value={signUpData.signUpName}
-                                    onChange={(e) => {
-                                        setSignUpData({ ...signUpData, signUpName: e.target.value });
-                                        if (errors.signUpName) setErrors({ ...errors, signUpName: undefined });
-                                    }}
-                                    className={cn(
-                                        "bg-[#001208] border-[#1d3a2c] text-white placeholder:text-[#c5c9b1]/40 focus:ring-[#ccf15a] focus:border-[#ccf15a] min-h-[44px] rounded-lg text-sm",
-                                        errors.signUpName ? 'border-red-500 focus:ring-red-500' : ''
-                                    )}
-                                />
-                                {errors.signUpName && (
-                                    <p className="text-xs text-red-400 font-medium">{errors.signUpName}</p>
-                                )}
-                            </div>
-
-                            <div className="space-y-1">
-                                <Input
-                                    id="signUpEmail"
-                                    placeholder="Email Address"
-                                    type="email"
-                                    value={signUpData.signUpEmail}
-                                    onChange={(e) => {
-                                        setSignUpData({ ...signUpData, signUpEmail: e.target.value });
-                                        if (errors.signUpEmail) setErrors({ ...errors, signUpEmail: undefined });
-                                    }}
-                                    className={cn(
-                                        "bg-[#001208] border-[#1d3a2c] text-white placeholder:text-[#c5c9b1]/40 focus:ring-[#ccf15a] focus:border-[#ccf15a] min-h-[44px] rounded-lg text-sm",
-                                        errors.signUpEmail ? 'border-red-500 focus:ring-red-500' : ''
-                                    )}
-                                />
-                                {errors.signUpEmail && (
-                                    <p className="text-xs text-red-400 font-medium">{errors.signUpEmail}</p>
-                                )}
-                            </div>
-
-                            <div className="space-y-1">
-                                <Input
-                                    id="signUpPassword"
-                                    placeholder="Password"
-                                    type="password"
-                                    value={signUpData.signUpPassword}
-                                    onChange={(e) => {
-                                        setSignUpData({ ...signUpData, signUpPassword: e.target.value });
-                                        if (errors.signUpPassword) setErrors({ ...errors, signUpPassword: undefined });
-                                    }}
-                                    className={cn(
-                                        "bg-[#001208] border-[#1d3a2c] text-white placeholder:text-[#c5c9b1]/40 focus:ring-[#ccf15a] focus:border-[#ccf15a] min-h-[44px] rounded-lg text-sm",
-                                        errors.signUpPassword ? 'border-red-500 focus:ring-red-500' : ''
-                                    )}
-                                />
-                                {errors.signUpPassword && (
-                                    <p className="text-xs text-red-400 font-medium">{errors.signUpPassword}</p>
-                                )}
-                            </div>
-
-                            <Button
-                                className="h-11 w-full bg-[#ccf15a] hover:bg-[#b0d440] text-[#161e00] font-bold text-sm transition-all duration-300 transform hover:scale-[1.01] uppercase tracking-wider mt-1"
-                                type="submit"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? 'Registering...' : 'Register'}
-                            </Button>
-                        </form>
-                    </TabsContent>
-                </Tabs>
+                    <Button
+                        className="h-11 w-full bg-[#ccf15a] hover:bg-[#b0d440] text-[#161e00] font-bold text-sm transition-all duration-300 transform hover:scale-[1.01] uppercase tracking-wider mt-2"
+                        type="submit"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? 'Signing In...' : 'Sign In'}
+                    </Button>
+                </form>
             </div>
         </div>
     );
@@ -384,7 +152,7 @@ function Login() {
                 <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-[#ccf15a]"></div>
             </div>
         }>
-            <AuthTabsContent />
+            <AuthContent />
         </Suspense>
     );
 }

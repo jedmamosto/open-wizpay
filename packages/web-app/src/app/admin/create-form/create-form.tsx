@@ -12,10 +12,9 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { auth } from '@/firebase/config';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { PaymentForm, Product } from '@/schemas/payment-form';
-import { onAuthStateChanged } from 'firebase/auth';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -153,25 +152,24 @@ export function CreatePaymentForm({
         }
     }, [formData, isWrapped, onChange]);
 
+    const { user } = useAuth();
+
     // Auth check
     useEffect(() => {
         if (!isWrapped) {
-            // Skip auth check if component is wrapped
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    setUserId(user.uid);
-                } else {
-                    setUserId('');
-                    router.push('/login');
-                    toast({
-                        variant: 'destructive',
-                        title: 'Authentication required',
-                        description: 'Please login to create a payment form',
-                    });
-                }
-            });
+            if (user) {
+                setUserId(user.uid);
+            } else {
+                setUserId('');
+                router.push('/login');
+                toast({
+                    variant: 'destructive',
+                    title: 'Authentication required',
+                    description: 'Please login to create a payment form',
+                });
+            }
         }
-    }, [router, toast, isWrapped]);
+    }, [user, router, toast, isWrapped]);
 
     const handleSubmit = async (submitFormData: PaymentForm) => {
         if (isWrapped && onChange) {
