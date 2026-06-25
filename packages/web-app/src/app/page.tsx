@@ -141,29 +141,23 @@ export default function Home() {
         
         <div className="flex items-center gap-2 sm:gap-4">
           <Link 
-            href="/developers" 
+            href="/login" 
             className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#c5c9b1] hover:text-white transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-[#ccf15a] focus-visible:outline-none rounded px-2.5 py-1.5 whitespace-nowrap"
           >
-            For Developers
+            Sign In
           </Link>
           <a
             href="https://github.com/jedmamosto/open-wizpay"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#c5c9b1] hover:text-white transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-[#ccf15a] focus-visible:outline-none rounded px-2.5 py-1.5 whitespace-nowrap"
+            className="shrink-0"
           >
-            GitHub
-          </a>
-          <Link href="/login" className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#c5c9b1] hover:text-white transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-[#ccf15a] focus-visible:outline-none rounded px-2.5 py-1.5 whitespace-nowrap">
-            Sign In
-          </Link>
-          <Link href="/login?tab=signup" className="shrink-0">
             <Button 
               className="bg-[#ccf15a] hover:bg-[#b0d440] text-[#161e00] font-bold text-[10px] sm:text-xs uppercase tracking-wider px-3 py-2 sm:px-5 sm:py-2.5 rounded-md transition-all duration-300 shadow-[0_4px_12px_rgba(204,241,90,0.15)] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
             >
-              Get Started
+              GitHub / Deploy
             </Button>
-          </Link>
+          </a>
         </div>
       </header>
 
@@ -190,15 +184,23 @@ export default function Home() {
             Connect your own PayMongo account to process payments. Keep your earnings minus raw gateway fees—WizPay itself takes 0% platform transaction cuts.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md pt-2">
-            <Link href="/login?tab=signup" className="w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-4 pt-2">
+            <a href="https://github.com/jedmamosto/open-wizpay" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
               <Button
                 className="w-full bg-[#ccf15a] hover:bg-[#b0d440] text-[#161e00] text-sm font-bold uppercase tracking-wider h-auto py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-[0_4px_20px_rgba(204,241,90,0.2)] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
               >
-                Create Free Account
+                Deploy WizPay
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
-            </Link>
+            </a>
+            <a href="#ai-onboarding" className="w-full sm:w-auto">
+              <Button
+                variant="ghost"
+                className="w-full border border-[#1d3a2c] text-white hover:bg-[#112f21] hover:text-white text-sm font-bold uppercase tracking-wider h-auto py-4 px-8 rounded-lg focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+              >
+                AI Onboarding
+              </Button>
+            </a>
           </div>
         </div>
 
@@ -585,12 +587,12 @@ export default function Home() {
                   </div>
 
                   <div className="pt-2">
-                    <Link href="/login?tab=signup" className="w-full">
+                    <Link href="/login" className="w-full">
                       <button 
                         style={{ borderColor: `${colors.primary}40` }}
                         className="w-full bg-[#022113] hover:bg-white/5 border text-white font-bold text-xs uppercase tracking-wider py-4 rounded-lg focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
                       >
-                        Link Your PayMongo Account
+                        Configure PayMongo Account
                       </button>
                     </Link>
                   </div>
@@ -679,7 +681,7 @@ export default function Home() {
       </section>
 
       {/* AI Onboarding Prompt Section */}
-      <section className="bg-[#022113]/20 border-t border-[#112f21] py-16 md:py-24">
+      <section id="ai-onboarding" className="bg-[#022113]/20 border-t border-[#112f21] py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="border border-[#112f21] rounded-2xl bg-[#062517]/50 p-6 sm:p-10 space-y-8 shadow-lg max-w-3xl mx-auto">
             <div className="space-y-3 text-center sm:text-left">
@@ -796,13 +798,13 @@ export default function Home() {
         </div>
 
         <div className="pt-2">
-          <Link href="/login?tab=signup">
+          <a href="https://github.com/jedmamosto/open-wizpay" target="_blank" rel="noopener noreferrer">
             <Button
               className="bg-[#ccf15a] hover:bg-[#b0d440] text-[#161e00] text-sm font-bold uppercase tracking-wider h-auto py-4 px-10 rounded-lg transition-all shadow-[0_4px_20px_rgba(204,241,90,0.15)] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
             >
-              Start Free Setup
+              Get Started on GitHub
             </Button>
-          </Link>
+          </a>
         </div>
 
         <p className="text-[10px] font-mono uppercase tracking-widest text-[#a6d0b5] font-medium">

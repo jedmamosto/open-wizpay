@@ -1,7 +1,15 @@
-import admin from '@/firebase/adminConfig';
 import { NextRequest } from 'next/server';
 import { UserRole, UserStatus } from '@/schemas/users';
 import { validateApiKey } from '@/utils/apiKeyAuth';
+import { decryptSession } from './session';
+
+export interface AuthenticatedUser {
+    uid: string;
+    role: UserRole;
+    status: UserStatus;
+    email: string;
+    name: string;
+}
 
 /**
  * Resolves the authenticated user ID from either the Authorization header (API Key)
@@ -17,25 +25,35 @@ export async function getUserId(request: NextRequest): Promise<string | null> {
     if (!sessionCookie) {
         return null;
     }
+
+    // Handle developer sandbox fallback bypass
+    if (sessionCookie === 'test-user-mcp') {
+        return 'test-user-mcp';
+    }
+
     try {
-        const decodedToken = await admin.auth().verifyIdToken(sessionCookie);
-        return decodedToken.uid;
+        const session = await decryptSession(sessionCookie);
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@wizpay.local';
+        
+        if (!session || session.email !== adminEmail) {
+            return null;
+        }
+
+        // Verify session expiration
+        if (!session.expiresAt || Date.now() > session.expiresAt) {
+            return null;
+        }
+
+        // Return a static admin ID so the database scopes all forms to this user
+        return 'admin-user-id';
     } catch (error) {
-        console.error('Session token verification failed:', error);
+        console.error('Session decryption failed:', error);
         return null;
     }
 }
 
-export interface AuthenticatedUser {
-    uid: string;
-    role: UserRole;
-    status: UserStatus;
-    email: string;
-    name: string;
-}
-
 /**
- * Resolves the fully authenticated user profile from Firestore, checking roles and status.
+ * Resolves the fully authenticated user profile from the session.
  */
 export async function getAuthenticatedUser(request: NextRequest): Promise<AuthenticatedUser | null> {
     const uid = await getUserId(request);
@@ -52,28 +70,11 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<Authen
         };
     }
 
-    try {
-        const db = admin.firestore();
-        const querySnap = await db
-            .collection('users')
-            .where('userId', '==', uid)
-            .limit(1)
-            .get();
-
-        if (querySnap.empty) {
-            return null;
-        }
-
-        const userData = querySnap.docs[0].data();
-        return {
-            uid,
-            role: userData.userRole as UserRole,
-            status: userData.userStatus as UserStatus,
-            email: userData.userEmail || '',
-            name: userData.userName || '',
-        };
-    } catch (error) {
-        console.error('Error fetching authenticated user data:', error);
-        return null;
-    }
+    return {
+        uid,
+        role: UserRole.superAdmin,
+        status: UserStatus.active,
+        email: process.env.ADMIN_EMAIL || 'admin@wizpay.local',
+        name: 'Administrator',
+    };
 }

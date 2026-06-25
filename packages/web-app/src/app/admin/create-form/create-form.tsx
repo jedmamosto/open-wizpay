@@ -12,10 +12,9 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { auth } from '@/firebase/config';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { PaymentForm, Product } from '@/schemas/payment-form';
-import { onAuthStateChanged } from 'firebase/auth';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -92,7 +91,6 @@ export function CreatePaymentForm({
     const router = useRouter();
     const { toast } = useToast();
     const [products, setProducts] = useState<Product[]>([]);
-    const [userId, setUserId] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Initialize form data - either from props or with defaults
@@ -153,25 +151,19 @@ export function CreatePaymentForm({
         }
     }, [formData, isWrapped, onChange]);
 
+    const { user } = useAuth();
+
     // Auth check
     useEffect(() => {
-        if (!isWrapped) {
-            // Skip auth check if component is wrapped
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    setUserId(user.uid);
-                } else {
-                    setUserId('');
-                    router.push('/login');
-                    toast({
-                        variant: 'destructive',
-                        title: 'Authentication required',
-                        description: 'Please login to create a payment form',
-                    });
-                }
+        if (!isWrapped && !user) {
+            router.push('/login');
+            toast({
+                variant: 'destructive',
+                title: 'Authentication required',
+                description: 'Please login to create a payment form',
             });
         }
-    }, [router, toast, isWrapped]);
+    }, [user, router, toast, isWrapped]);
 
     const handleSubmit = async (submitFormData: PaymentForm) => {
         if (isWrapped && onChange) {
@@ -185,9 +177,10 @@ export function CreatePaymentForm({
 
         try {
             setIsSubmitting(true);
+            const currentUserId = user?.uid || '';
             const validationErrors = validateFormData({
                 ...submitFormData,
-                userId,
+                userId: currentUserId,
             });
 
             if (validationErrors.length > 0) {
@@ -201,7 +194,7 @@ export function CreatePaymentForm({
             }
 
             setErrors([]);
-            const formDataWithUserId = { ...submitFormData, userId };
+            const formDataWithUserId = { ...submitFormData, userId: currentUserId };
 
             const response = await fetch('/api/payment-forms', {
                 method: 'POST',

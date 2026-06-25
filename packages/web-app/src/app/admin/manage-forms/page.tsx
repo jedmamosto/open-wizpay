@@ -10,9 +10,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { auth } from '@/firebase/config';
+import { useAuth } from '@/context/AuthContext';
 import { PaymentForm } from '@/schemas/payment-form';
-import { onAuthStateChanged } from 'firebase/auth';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { IntegratedFormEditor } from './integrated-form-editor';
@@ -23,14 +22,8 @@ const usePaymentForms = () => {
     const [paymentFormsData, setPaymentFormsData] = useState<PaymentForm[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-    // Fetch current user and handle auth state changes
-    const fetchCurrentUser = useCallback(() => {
-        onAuthStateChanged(auth, (user) => {
-            setCurrentUserId(user?.uid ?? null);
-        });
-    }, []);
+    const { user } = useAuth();
+    const currentUserId = user?.uid ?? null;
 
     // Fetch payment forms with error handling
     const fetchPaymentForms = useCallback(async () => {
@@ -104,7 +97,6 @@ const usePaymentForms = () => {
         loading,
         error,
         currentUserId,
-        fetchCurrentUser,
         fetchPaymentForms,
         handleEdit,
         handleDelete,
@@ -117,7 +109,6 @@ export default function ManageForms() {
         loading,
         error,
         currentUserId,
-        fetchCurrentUser,
         fetchPaymentForms,
         handleEdit,
         handleDelete,
@@ -127,9 +118,8 @@ export default function ManageForms() {
 
     // Initialize data fetching
     useEffect(() => {
-        fetchCurrentUser();
         fetchPaymentForms();
-    }, [fetchCurrentUser, fetchPaymentForms]);
+    }, [fetchPaymentForms]);
 
     // Filter forms for current user
     const userForms = paymentFormsData.filter(

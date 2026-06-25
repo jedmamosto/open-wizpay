@@ -1,11 +1,9 @@
 'use client';
 
-import { auth } from '@/firebase/config';
-import { ArchiveIcon, DashboardIcon, GearIcon, PersonIcon } from '@radix-ui/react-icons';
-import { signOut } from 'firebase/auth';
-import Cookies from 'js-cookie';
+import { useAuth } from '@/context/AuthContext';
+import { ArchiveIcon, DashboardIcon, GearIcon } from '@radix-ui/react-icons';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 import {
     Sidebar,
@@ -21,34 +19,13 @@ import { cn } from '@/lib/utils';
 
 const menuItems = [
     { icon: DashboardIcon, label: 'Dashboard', href: '/admin' },
-    { icon: PersonIcon, label: 'Manage Users', href: '/admin/manage-users' },
     { icon: ArchiveIcon, label: 'Manage Forms', href: '/admin/manage-forms' },
     { icon: GearIcon, label: 'Developer Settings', href: '/admin/developer-settings' },
 ];
 
-interface AdminSidebarProps {
-    userRole: string | null;
-}
-
-export default function AdminSidebar({ userRole }: AdminSidebarProps) {
+export default function AdminSidebar() {
     const pathname = usePathname();
-    const router = useRouter();
-
-    const handleSignOut = async () => {
-        try {
-            await signOut(auth);
-            Cookies.remove('session');
-            // console.log('Sign out successful');
-            router.push('/');
-        } catch (error) {
-            console.error('Error signing out:', error);
-        }
-    };
-
-    const filteredMenuItems =
-        userRole === 'super admin'
-            ? menuItems
-            : menuItems.filter((item) => item.label !== 'Manage Users');
+    const { signOut } = useAuth();
 
     return (
         <SidebarProvider>
@@ -65,7 +42,7 @@ export default function AdminSidebar({ userRole }: AdminSidebarProps) {
                 </SidebarHeader>
                 <SidebarContent className="bg-[#001208] p-2">
                     <SidebarMenu className="space-y-1">
-                        {filteredMenuItems.map((item) => (
+                        {menuItems.map((item) => (
                             <SidebarMenuItem key={item.href}>
                                 <SidebarMenuButton
                                     asChild
@@ -89,7 +66,7 @@ export default function AdminSidebar({ userRole }: AdminSidebarProps) {
                     <SidebarMenu>
                         <SidebarMenuItem>
                             <SidebarMenuButton 
-                                onClick={handleSignOut}
+                                onClick={signOut}
                                 className="w-full justify-start gap-4 px-4 py-3 rounded-lg text-[#c8ebd5]/70 hover:bg-[#93000a]/10 hover:text-red-400 hover:border-red-950 transition-colors"
                             >
                                 Sign Out
