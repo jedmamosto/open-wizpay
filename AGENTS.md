@@ -1,7 +1,14 @@
 # AGENTS.md
 
 ## 1. Project Overview
-This workspace is the parent repository for the **WizPay** project ecosystem, a payment engine and storefront orchestration framework tailored for Philippine merchants. The workspace is structured as a monorepo containing:
+This workspace is the parent repository for the **WizPay** project ecosystem, a sovereign unified checkout engine and storefront orchestration framework tailored for Philippine merchants. WizPay goes beyond a simple payment gateway (like PayMongo) by providing:
+1. **Progressive Checkout Overlay**: Inline checkout/modal overlays instead of jarring external redirects.
+2. **Codeless Storefront Builder**: Visually compose product checkouts & copy-paste SDK scripts on any site.
+3. **AI-Native MCP Integration**: An MCP server that enables AI agents to configure, update, and embed checkout portals conversationally.
+4. **PH-Localized Logistics**: Accurate shipping validation mapped down to local Provinces, Cities, and Barangays.
+5. **Zero Platform Fees**: Route payments directly to the merchant's gateway with no platform commission cuts.
+
+The workspace is structured as a monorepo containing:
 1. **web-app** (`packages/web-app`): A Next.js payment engine, hosted storefront builder, and Embeddable Storefront SDK.
 2. **mcp-server** (`packages/mcp-server`): A TypeScript-based Model Context Protocol (MCP) server that enables AI agents to interactively configure and embed WizPay checkout forms.
 
@@ -30,6 +37,7 @@ This workspace is the parent repository for the **WizPay** project ecosystem, a 
 - **Open-Source PR Governance**: All changes must go through pull requests. Direct pushes to `main` are forbidden. Pull requests must pass the CI workflow (`ci.yml`) with 1+ approval before merging.
 - **Landing Page Freeze**: To preserve brand voice and direct marketing alignments, the landing page file (`packages/web-app/src/app/page.tsx`) is frozen. Open-source contributors are strictly forbidden from modifying this file.
 - **Secret Scanning**: GitHub Secret Scanning and Push Protection must remain active. Do not commit or push live credentials (e.g., Paymongo API keys, Firebase service accounts). Use environment variables for local configuration.
+- **Value Proposition Mandate**: When writing copy, product features, or documentation, align with our core differentiators over direct PayMongo: inline/progressive overlay checkouts, conversational AI (MCP) configuration, visual storefront orchestration, and PH-localized logistics.
 
 ## 5. Common Development Commands
 - **Root-level Operations**:

@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## 1. Project Overview
-WizPay is a modern, TypeScript-based Next.js payment engine and storefront orchestration framework that allows Philippine merchants to visually compile payment forms and checkout portals. Currently, it operates as a centralized hosted SaaS platform (Scenario B) routing merchant-supplied credentials and checkouts through our shared infrastructure, with the long-term goal of transitioning into a fully decentralized, self-hostable open-source engine (Scenario A). It provides:
+WizPay is a sovereign unified checkout engine and storefront orchestration framework tailored for Philippine merchants. It separates itself from raw payment gateways (like PayMongo) by providing progressive inline checkout overlays (no redirects), an embeddable storefront SDK, a visual form builder, an AI-native MCP server configuration interface, and localized shipping calculations. Currently, it operates as a centralized hosted SaaS platform (Scenario B) routing merchant-supplied credentials and checkouts through our shared infrastructure, with the long-term goal of transitioning into a fully decentralized, self-hostable open-source engine (Scenario A). It provides:
 - A codeless administrative dashboard for hosted checkout configuration.
 - A public API and Embeddable Storefront SDK (`/public/sdk/wizpay.js`) for custom client developer integrations.
 
@@ -39,6 +39,7 @@ WizPay is a modern, TypeScript-based Next.js payment engine and storefront orche
 * **API Key Auth**: Developer API keys are validated using `src/utils/apiKeyAuth.ts` and hashed using SHA-256. Enforce merchant scoping in routes.
 * **CI Validation**: All changes must pass `npm run lint` and compilation/build checks locally before submitting a PR to satisfy the automated CI validation suite.
 * **Secret Protection**: Keep environment keys secure. Never commit live or mock Paymongo keys or Firebase service files.
+* **Value Proposition Mandate**: Align branding, copy, and features with our core differentiators over direct PayMongo: progressive inline checkouts (no redirects), conversational AI (MCP) configuration, visual storefront orchestration, and PH-localized logistics.
 
 ## 5. Common Development Commands
 * Run development server: `npm run dev`

@@ -55,11 +55,9 @@ export function IntegratedFormEditor({
 
     const { user } = useAuth();
 
-    // Auth check - only updates userId field, nothing else
+    // Auth check - redirect if not logged in
     useEffect(() => {
-        if (user) {
-            setFormData((prev) => ({ ...prev, userId: user.uid }));
-        } else {
+        if (!user) {
             router.push('/login');
             toast({
                 variant: 'destructive',
@@ -87,18 +85,23 @@ export function IntegratedFormEditor({
         try {
             setIsSubmitting(true);
 
+            const submissionData = {
+                ...formData,
+                userId: user?.uid || formData.userId || 'admin-user-id',
+            };
+
             if (onSubmit) {
-                await onSubmit(formData);
+                await onSubmit(submissionData);
             } else {
                 const method = isEditing ? 'PATCH' : 'POST';
                 const url = isEditing
-                    ? `/api/payment-forms?paymentFormId=${formData.paymentFormId}`
+                    ? `/api/payment-forms?paymentFormId=${submissionData.paymentFormId}`
                     : '/api/payment-forms';
 
                 const response = await fetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData),
+                    body: JSON.stringify(submissionData),
                 });
 
                 if (!response.ok) {

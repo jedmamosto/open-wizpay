@@ -67,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Check auth session status on mount
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         checkSession();
     }, [checkSession]);
 

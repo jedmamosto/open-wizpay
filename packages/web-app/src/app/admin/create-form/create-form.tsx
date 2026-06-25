@@ -91,7 +91,6 @@ export function CreatePaymentForm({
     const router = useRouter();
     const { toast } = useToast();
     const [products, setProducts] = useState<Product[]>([]);
-    const [userId, setUserId] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Initialize form data - either from props or with defaults
@@ -156,18 +155,13 @@ export function CreatePaymentForm({
 
     // Auth check
     useEffect(() => {
-        if (!isWrapped) {
-            if (user) {
-                setUserId(user.uid);
-            } else {
-                setUserId('');
-                router.push('/login');
-                toast({
-                    variant: 'destructive',
-                    title: 'Authentication required',
-                    description: 'Please login to create a payment form',
-                });
-            }
+        if (!isWrapped && !user) {
+            router.push('/login');
+            toast({
+                variant: 'destructive',
+                title: 'Authentication required',
+                description: 'Please login to create a payment form',
+            });
         }
     }, [user, router, toast, isWrapped]);
 
@@ -183,9 +177,10 @@ export function CreatePaymentForm({
 
         try {
             setIsSubmitting(true);
+            const currentUserId = user?.uid || '';
             const validationErrors = validateFormData({
                 ...submitFormData,
-                userId,
+                userId: currentUserId,
             });
 
             if (validationErrors.length > 0) {
@@ -199,7 +194,7 @@ export function CreatePaymentForm({
             }
 
             setErrors([]);
-            const formDataWithUserId = { ...submitFormData, userId };
+            const formDataWithUserId = { ...submitFormData, userId: currentUserId };
 
             const response = await fetch('/api/payment-forms', {
                 method: 'POST',
