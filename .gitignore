@@ -28,6 +28,12 @@ dist/
 .agents/
 .impeccable/
 
+# Local Developer & AI Agent Context
+PRODUCT.md
+DESIGN.md
+scratch/
+*.log
+
 # OS files
 .DS_Store
 Thumbs.db
