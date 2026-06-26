@@ -177,11 +177,11 @@ export default function Home() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-black uppercase tracking-tight text-white leading-[1.05]">
-            Accept GCash, Maya, and credit cards <span className="text-[#ccf15a]">directly</span> on your store
+            The <span className="text-[#ccf15a]">AI-Native</span> storefront checkout engine for PH merchants
           </h1>
 
           <p className="text-lg text-[#a6d0b5] leading-relaxed max-w-xl">
-            Connect your own PayMongo account to process payments. Keep your earnings minus raw gateway fees—WizPay itself takes 0% platform transaction cuts.
+            Orchestrate your checkouts conversationally via AI agents. Connect your own PayMongo account to process payments directly with 0% platform transaction fees.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-2">
@@ -687,14 +687,62 @@ export default function Home() {
             <div className="space-y-3 text-center sm:text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#ccf15a]/30 bg-[#ccf15a]/5 text-[#ccf15a] text-xs font-mono uppercase tracking-wider">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>AI-Powered Onboarding</span>
+                <span>Conversational Commerce</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black uppercase text-white tracking-tight">
-                Not a Coder? Use your AI Assistant
+                Conversational Checkout Setup
               </h2>
               <p className="text-sm text-[#a6d0b5] leading-relaxed">
-                If you want to use WizPay but don&apos;t have developer skills, you can have your favorite AI assistant (like Claude, Gemini, or ChatGPT) set up and configure everything for you. WizPay supports the **Model Context Protocol (MCP)**, meaning your AI can directly create payment forms and connect gateways on your behalf once you run our simple installer.
+                If you want to use WizPay but don&apos;t have developer skills, you can have your favorite AI assistant (like Cursor, Claude Desktop, or Antigravity) configure everything for you. WizPay supports the **Model Context Protocol (MCP)**, allowing your AI assistant to directly create, update, and deploy checkout forms on your behalf.
               </p>
+            </div>
+
+            {/* Conversational AI Mockup */}
+            <div className="border border-[#112f21] rounded-xl bg-[#001208] overflow-hidden flex flex-col space-y-4 p-4 text-xs font-sans">
+              <div className="flex justify-between items-center border-b border-[#112f21] pb-2 text-[10px] text-[#a6d0b5]/50 font-mono uppercase tracking-wider">
+                <span>Conversational Agent Chat</span>
+                <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-[#ccf15a]" /> Connected via MCP</span>
+              </div>
+              
+              <div className="space-y-3 flex flex-col text-left">
+                {/* User message */}
+                <div className="self-end max-w-[85%] bg-[#022113] border border-[#112f21] rounded-2xl rounded-tr-none px-4 py-3 text-white space-y-1">
+                  <span className="text-[10px] text-[#ccf15a] font-mono block">Merchant</span>
+                  <p className="leading-relaxed">
+                    Set up a new checkout form for our &ldquo;Batangas Coffee Roast&rdquo;. Price is ₱750 and use the emerald theme.
+                  </p>
+                </div>
+                
+                {/* Tool call */}
+                <div className="self-start max-w-[85%] bg-[#062517]/30 border border-[#ccf15a]/20 rounded-lg p-3 font-mono text-[10px] text-white space-y-2">
+                  <div className="flex items-center gap-2 text-[#ccf15a]">
+                    <Sparkles className="h-3 w-3 animate-pulse" />
+                    <span>Executing Tool Call: wizpay.create_form</span>
+                  </div>
+                  <pre className="text-[#a6d0b5] overflow-x-auto p-1.5 bg-[#001208] rounded border border-[#112f21] text-[9px]">
+{`{
+  "title": "Batangas Coffee Roast",
+  "price": 750,
+  "colorScheme": "emerald"
+}`}
+                  </pre>
+                </div>
+                
+                {/* AI response */}
+                <div className="self-start max-w-[85%] bg-[#112f21]/20 border border-[#112f21] rounded-2xl rounded-tl-none px-4 py-3 text-[#a6d0b5] space-y-2">
+                  <div>
+                    <span className="text-[10px] text-[#6dfe9c] font-mono block">AI Assistant</span>
+                    <p className="leading-relaxed text-white">
+                      I have created the checkout form! You can now embed it using this snippet:
+                    </p>
+                  </div>
+                  <pre className="text-[#ccf15a] font-mono text-[9px] p-2 bg-[#001208] rounded border border-[#112f21] overflow-x-auto">
+{`<div id="wizpay-storefront"
+  data-form-id="form_y7d2h9">
+</div>`}
+                  </pre>
+                </div>
+              </div>
             </div>
 
             <div className="border border-[#112f21] rounded-xl bg-[#001208] p-5 font-mono text-xs text-[#c5c9b1] leading-relaxed relative">
