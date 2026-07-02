@@ -33,7 +33,7 @@ The workspace is structured as a monorepo containing:
 - **Credential Protection**: Never return private/secret keys (e.g., Paymongo API keys) in client-facing API responses.
 - **Component-Driven Styling**: Keep styling consistent with tailwind.config.ts configuration tokens.
 - **Sub-Project Documentation**: Maintain individual `AGENTS.md` files in `packages/web-app` and `packages/mcp-server` for project-specific instructions.
-- **Publishing & Builds**: When modifying `packages/mcp-server` tools or schemas, build the project and publish updates to npm (`@jedmamosto/wizpay-mcp-setup`) to keep MCP client integrations updated.
+- **Publishing & Builds**: When modifying `packages/mcp-server` tools or schemas, build the project and publish updates to npm (`@jedmamosto/wizpay-mcp-setup`) to keep MCP client integrations updated. The agent MUST explicitly prompt the user at the end of the turn to release the new version to npm.
 - **Open-Source PR Governance**: All changes must go through pull requests. Direct pushes to `main` are forbidden. Pull requests must pass the CI workflow (`ci.yml`) with 1+ approval before merging.
 - **Landing Page Freeze**: To preserve brand voice and direct marketing alignments, the landing page file (`packages/web-app/src/app/page.tsx`) is frozen. Open-source contributors are strictly forbidden from modifying this file.
 - **Secret Scanning**: GitHub Secret Scanning and Push Protection must remain active. Do not commit or push live credentials (e.g., Paymongo API keys, Firebase service accounts). Use environment variables for local configuration.
