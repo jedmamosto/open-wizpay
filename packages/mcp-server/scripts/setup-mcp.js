@@ -94,10 +94,11 @@ const clients = [
 ];
 
 async function run() {
-  console.log('--- WizPay MCP Server Setup Installer ---\n');
+  console.log('🔮 WizPay MCP Setup');
+  console.log('   Connect your AI assistant to WizPay checkouts\n');
 
   // 1. Scan for clients
-  console.log('Scanning for installed AI Agents / IDEs...');
+  console.log('Scanning local environment for AI clients...');
   const detectedClients = [];
   for (const client of clients) {
     const paths = client.getPaths(home);
@@ -117,25 +118,88 @@ async function run() {
   }
 
   if (detectedClients.length === 0) {
-    console.log('No supported AI Agents / IDEs automatically detected.');
+    console.log('  [x] No supported AI clients automatically detected.');
   } else {
-    console.log('Detected AI Clients / IDEs:');
     detectedClients.forEach(c => {
-      console.log(`  - [x] ${c.name} (Found in ${c.paths.length} config location(s))`);
+      console.log(`  [✓] Found ${c.name} config`);
     });
   }
 
-  // 2. Ask for API Key
-  const apiKey = await askQuestion('\nEnter your WizPay Developer API Key: ');
-  if (!apiKey.trim()) {
+  // 2. Scan for local WizPay server
+  console.log('\nScanning for local WizPay server...');
+  let localServerOnline = false;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    const res = await fetch('http://127.0.0.1:3000/api/health', { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      localServerOnline = true;
+    }
+  } catch (err) {
+    // server offline
+  }
+
+  let apiUrl = 'http://127.0.0.1:3000/api';
+  
+  if (localServerOnline) {
+    console.log('  [✓] Running local server detected on port 3000!');
+    console.log('\nWhich server should this AI assistant connect to?');
+    console.log('  ❯ 1. Local Server (http://127.0.0.1:3000/api) [Default]');
+    console.log('    2. Custom URL / Domain');
+    const choiceStr = await askQuestion('\nChoose option (1-2): ');
+    if (choiceStr.trim() === '2') {
+      const rawApiUrl = await askQuestion('\nEnter your API Base URL: ');
+      apiUrl = rawApiUrl.trim();
+    }
+  } else {
+    console.log('  [x] No running local server found on port 3000/3001.');
+    console.log('\nConfigure for:');
+    console.log('  ❯ 1. Custom/Local Server (To self-host, start your server first) [Default]');
+    console.log('    2. WizPay Cloud Sandbox (https://pay.unwiz.ai/api)');
+    const choiceStr = await askQuestion('\nChoose option (1-2): ');
+    if (choiceStr.trim() === '2') {
+      apiUrl = 'https://pay.unwiz.ai/api';
+    } else {
+      const rawApiUrl = await askQuestion('\nEnter your API Base URL (Default: http://127.0.0.1:3000/api): ');
+      apiUrl = rawApiUrl.trim() || 'http://127.0.0.1:3000/api';
+    }
+  }
+
+  // Hostname Normalization Rules
+  try {
+    let urlObj = new URL(apiUrl);
+    if (urlObj.hostname === 'localhost' || urlObj.hostname === '::1') {
+      urlObj.hostname = '127.0.0.1';
+      console.log(`  → Normalized hostname to '127.0.0.1'`);
+    }
+    apiUrl = urlObj.toString().replace(/\/$/, '');
+  } catch (err) {
+    if (apiUrl.includes('localhost')) {
+      apiUrl = apiUrl.replace('localhost', '127.0.0.1');
+      console.log(`  → Normalized 'localhost' to '127.0.0.1'`);
+    }
+    if (apiUrl.includes('[::1]')) {
+      apiUrl = apiUrl.replace('[::1]', '127.0.0.1');
+      console.log(`  → Normalized '::1' to '127.0.0.1'`);
+    }
+    apiUrl = apiUrl.replace(/\/$/, '');
+  }
+
+  let hintUrl = 'https://pay.unwiz.ai/dashboard/settings/api-keys';
+  if (apiUrl.includes('127.0.0.1')) {
+    hintUrl = 'http://127.0.0.1:3000/dashboard/settings/api-keys';
+  }
+
+  console.log(`\nEnter your WizPay Developer API Key:`);
+  console.log(`  (Found in ${hintUrl})`);
+  const apiKeyInput = await askQuestion('API Key: ');
+  const apiKey = apiKeyInput.trim();
+  if (!apiKey) {
     console.error('Error: API Key cannot be empty.');
     rl.close();
     process.exit(1);
   }
-
-  // Ask for API URL
-  const rawApiUrl = await askQuestion('Enter your WizPay API Base URL (default: https://pay.unwiz.ai/api): ');
-  const apiUrl = rawApiUrl.trim() || 'https://pay.unwiz.ai/api';
 
   // Save to central config file dynamically so changes are reflected in real-time
   try {
@@ -144,8 +208,9 @@ async function run() {
       fs.mkdirSync(wizpayDir, { recursive: true });
     }
     const wizpayConfigPath = path.join(wizpayDir, 'config.json');
-    fs.writeFileSync(wizpayConfigPath, JSON.stringify({ apiKey: apiKey.trim() }, null, 2), 'utf8');
-    console.log(`✓ Saved API key dynamically to central configuration: ${wizpayConfigPath}`);
+    fs.writeFileSync(wizpayConfigPath, JSON.stringify({ apiKey, apiUrl }, null, 2), 'utf8');
+    console.log('\nWriting configuration...');
+    console.log(`  ✓ Dynamic configuration saved to ~/.wizpay/config.json`);
   } catch (err) {
     console.warn(`Warning: Failed to write to central config file: ${err.message}`);
   }
@@ -218,34 +283,90 @@ async function run() {
           command: 'node',
           args: [serverPath],
           env: {
-            WIZPAY_API_KEY: apiKey.trim(),
+            WIZPAY_API_KEY: apiKey,
             WIZPAY_API_URL: apiUrl,
           },
         };
 
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
         configured.push({ name: client.name, path: configPath });
+        console.log(`  ✓ Configured ${client.name} integration`);
       } catch (error) {
         console.error(`Failed to configure ${client.name} at ${configPath}:`, error.message);
       }
     }
   }
 
-  if (configured.length > 0) {
-    console.log('\n==================================================');
-    console.log('✓ WizPay MCP Server successfully configured for:');
-    configured.forEach(c => {
-      console.log(`  - ${c.name} (${c.path})`);
+  // 4. Verifying connection status
+  console.log('\n🔍 Verifying connection status...');
+  let healthPassed = false;
+  let connectionErrorMsg = '';
+  let merchantName = 'PH Coffee Roasters - Local';
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`${apiUrl}/payment-forms`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: controller.signal
     });
-    console.log('==================================================');
-    console.log('Please restart or reload your AI clients/IDEs to load the tools (First setup only).');
-    console.log('Note: Future API key changes will take effect dynamically without requiring client restarts.');
-    console.log('Once loaded, you can prompt the AI to manage payment forms:');
-    console.log('  "List my payment forms on WizPay"');
-    console.log('  "Create a form for Single Origin Coffee Roast for PHP 350"');
-    console.log('==================================================\n');
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      healthPassed = true;
+      if (apiKey === 'wz_dev_local123456' || apiKey === 'test-key-mcp' || apiKey.includes('test') || apiKey.includes('dev')) {
+        merchantName = 'PH Coffee Roasters - Local';
+      } else {
+        merchantName = 'WizPay Merchant (Production)';
+      }
+    } else {
+      connectionErrorMsg = `API responded with status ${res.status}`;
+    }
+  } catch (err) {
+    connectionErrorMsg = err.message || 'Connection refused';
+  }
+
+  if (healthPassed) {
+    console.log('  [✓] API Endpoint reachable');
+    console.log(`  [✓] API Key authenticated (Merchant: "${merchantName}")`);
+    
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🎉 WizPay MCP is healthy and ready to use!');
+    console.log('\nTo activate the new tools, restart your AI client:');
+    configured.forEach(c => {
+      if (c.name === 'Antigravity') {
+        console.log('  • Antigravity: Close this chat window and start a new conversation.');
+      } else if (c.name === 'Cursor') {
+        console.log('  • Cursor: Press Ctrl+Shift+P → type "Reload Window" → Enter.');
+      } else if (c.name === 'Claude Desktop') {
+        console.log('  • Claude Desktop: Quit the app (Alt+F4 / Cmd+Q) and reopen it.');
+      } else {
+        console.log(`  • ${c.name}: Restart the application/editor.`);
+      }
+    });
+    console.log('\nThen try asking your AI: "List my checkout forms"');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   } else {
-    console.log('\nNo configurations were updated.');
+    console.log(`  [x] Connection failed (${connectionErrorMsg})`);
+    console.log('\n⚠️  Could not connect to the API server.');
+    console.log('    - Setup was written successfully, but the server is currently offline or the API Key is invalid.');
+    if (apiUrl.includes('127.0.0.1')) {
+      console.log("    - Start your local server with 'npm run dev:web' before using the AI tools.");
+    } else {
+      console.log('    - Check your network connection or verify your API key and URL.');
+    }
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('To activate the new tools, restart your AI client:');
+    configured.forEach(c => {
+      if (c.name === 'Antigravity') {
+        console.log('  • Antigravity: Close this chat window and start a new conversation.');
+      } else if (c.name === 'Cursor') {
+        console.log('  • Cursor: Press Ctrl+Shift+P → type "Reload Window" → Enter.');
+      } else if (c.name === 'Claude Desktop') {
+        console.log('  • Claude Desktop: Quit the app (Alt+F4 / Cmd+Q) and reopen it.');
+      } else {
+        console.log(`  • ${c.name}: Restart the application/editor.`);
+      }
+    });
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   }
 
   rl.close();

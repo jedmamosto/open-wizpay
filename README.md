@@ -53,12 +53,16 @@ npm install
    ```
 2. Navigate to your **WizPay Admin Dashboard** (`http://localhost:3000`), go to **Developer Settings**, and generate an API key (`wzp_live_...`).
 3. Run the automated MCP setup installer:
+   > [!TIP]
+   > For a zero-config setup, make sure your Next.js server is running (`npm run dev:web`) *before* running the installer. It will auto-detect the port and select local mode.
+
    ```bash
    npm run setup:mcp
    ```
-   * Paste your Developer API key when prompted.
-   * Provide your local self-hosted URL (`http://localhost:3000/api`) when prompted for the WizPay API base URL.
-   * Restart/reload your AI editor or Claude Desktop to load the tools.
+   * Paste your Developer API key when prompted (find it in `Developer Settings` in your local dashboard).
+   * If your local server is running, the script will auto-detect it. If offline, choose "Custom/Local Server" to target your local environment.
+   * **IDE Restart (First-Time Only)**: Restart your AI client (Cursor, Claude Desktop, or Antigravity) to load the tools.
+   * **Zero-Restart Updates**: Future changes to your API key or server URL in the dashboard settings will take effect dynamically without requiring you to restart your client or conversation.
 
 ---
 

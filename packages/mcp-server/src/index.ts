@@ -14,27 +14,86 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-const API_URL = process.env.WIZPAY_API_URL || 'https://pay.unwiz.ai/api';
+interface WizPayConfig {
+  apiKey?: string;
+  apiUrl?: string;
+}
 
-function getApiKey(): string {
-  // 1. Try local config file first
+function getActiveConfig(): { apiKey: string; apiUrl: string } {
+  let fileConfig: WizPayConfig = {};
+  
   try {
     const home = os.homedir();
     const configPath = path.join(home, '.wizpay', 'config.json');
     if (fs.existsSync(configPath)) {
-      const data = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      if (data.apiKey) return data.apiKey;
+      fileConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     }
   } catch (e) {
-    // Ignore error and fall back
+    // Fail silently, fallback to env / defaults
   }
 
-  // 2. Fall back to environment variable
-  const envKey = process.env.WIZPAY_API_KEY;
-  if (envKey) return envKey;
+  const apiKey = fileConfig.apiKey || process.env.WIZPAY_API_KEY || "";
+  let apiUrl = fileConfig.apiUrl || process.env.WIZPAY_API_URL || "https://pay.unwiz.ai/api";
 
-  throw new Error('WizPay API Key is not configured. Please run `npx @jedmamosto/wizpay-mcp-setup` to configure it.');
+  // Force IPv4 loopback to prevent Windows IPv6 resolution issues (localhost -> 127.0.0.1)
+  if (apiUrl.includes('localhost') || apiUrl.includes('[::1]')) {
+    apiUrl = apiUrl.replace('localhost', '127.0.0.1').replace('[::1]', '127.0.0.1');
+  }
+
+  // Sanitize trailing slash
+  apiUrl = apiUrl.replace(/\/$/, '');
+
+  if (!apiKey) {
+    throw new Error('WizPay API Key is not configured. Please run `npx @jedmamosto/wizpay-mcp-setup` to configure it.');
+  }
+
+  return { apiKey, apiUrl };
 }
+
+function handleToolError(error: any, targetUrl: string) {
+  const isConnectionRefused = error.code === 'ECONNREFUSED' || error.message?.includes('fetch failed') || error.message?.includes('connect ECONNREFUSED');
+  const isUnauthorized = error.message?.includes('401') || error.status === 401 || error.message?.includes('status 401');
+
+  let systemInstruction = "";
+
+  if (isConnectionRefused) {
+    systemInstruction = `
+=========================================
+[FATAL CONFIG ERROR] API SERVER UNREACHABLE
+=========================================
+- Target Endpoint: ${targetUrl}
+- Technical Error: ${error.message}
+- Suggested Actions:
+  1. If running a local server: tell the user to start the server by running 'npm run dev:web' in the web-app directory.
+  2. If using Cloud: check network connection or verify endpoint domain.
+- MANDATE TO AI AGENT: STOP retrying. DO NOT attempt to write alternative configuration values or run file bypasses. Immediately report this failure to the user and halt further action.
+=========================================`;
+  } else if (isUnauthorized) {
+    const troubleshootUrl = targetUrl.includes('127.0.0.1')
+      ? 'http://127.0.0.1:3000/dashboard/settings/api-keys'
+      : 'https://pay.unwiz.ai/dashboard/settings/api-keys';
+
+    systemInstruction = `
+=========================================
+[FATAL AUTH ERROR] API KEY EXPIRED OR INVALID
+=========================================
+- Technical Error: Unauthorized (401)
+- Suggested Actions:
+  1. Ask the user to run 'npx @jedmamosto/wizpay-mcp-setup' to reset their API Key.
+  2. The user can verify/rotate their API keys in their dashboard settings: ${troubleshootUrl}
+- MANDATE TO AI AGENT: STOP retrying. DO NOT attempt to guess API keys. Immediately report this failure to the user and halt.
+=========================================`;
+  }
+
+  return {
+    content: [{ 
+      type: 'text', 
+      text: `Error Details: ${error.message || error}\n${systemInstruction}` 
+    }],
+    isError: true,
+  };
+}
+
 
 // Zod schemas for validation inside MCP Server
 const ProductSchema = z.object({
@@ -327,18 +386,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
         },
       },
+      {
+        name: 'diagnose',
+        description: 'Tests connectivity, parses central config files, checks for Windows IPv6 loopback conflicts, and returns a detailed diagnostics health check.',
+        inputSchema: {
+          type: 'object',
+          properties: {}
+        }
+      }
     ],
   };
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+  let activeApiUrl = 'https://pay.unwiz.ai/api';
 
   try {
     switch (name) {
       case 'list_forms': {
-        const response = await fetch(`${API_URL}/payment-forms`, {
-          headers: { Authorization: `Bearer ${getApiKey()}` },
+        const { apiKey, apiUrl } = getActiveConfig();
+        activeApiUrl = apiUrl;
+        const response = await fetch(`${apiUrl}/payment-forms`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (!response.ok) {
           const body = await response.text();
@@ -350,8 +420,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'get_form': {
         const { paymentFormId } = args as { paymentFormId: string };
-        const response = await fetch(`${API_URL}/payment-forms/query?paymentFormId=${paymentFormId}`, {
-          headers: { Authorization: `Bearer ${getApiKey()}` },
+        const { apiKey, apiUrl } = getActiveConfig();
+        activeApiUrl = apiUrl;
+        const response = await fetch(`${apiUrl}/payment-forms/query?paymentFormId=${paymentFormId}`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
         });
         if (!response.ok) {
           const body = await response.text();
@@ -363,11 +435,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'create_form': {
         const parsed = CreateFormSchema.parse(args);
-        const response = await fetch(`${API_URL}/payment-forms`, {
+        const { apiKey, apiUrl } = getActiveConfig();
+        activeApiUrl = apiUrl;
+        const response = await fetch(`${apiUrl}/payment-forms`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${getApiKey()}`,
+            Authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify(parsed),
         });
@@ -382,11 +456,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'update_form': {
         const { paymentFormId, ...rest } = args as { paymentFormId: string; [key: string]: any };
         const parsed = UpdateFormSchema.parse(rest);
-        const response = await fetch(`${API_URL}/payment-forms?paymentFormId=${paymentFormId}`, {
+        const { apiKey, apiUrl } = getActiveConfig();
+        activeApiUrl = apiUrl;
+        const response = await fetch(`${apiUrl}/payment-forms?paymentFormId=${paymentFormId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${getApiKey()}`,
+            Authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify(parsed),
         });
@@ -400,11 +476,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'get_embed_code': {
         const { paymentFormId, framework } = args as { paymentFormId: string; framework: 'html' | 'react' };
+        const { apiUrl } = getActiveConfig();
+        activeApiUrl = apiUrl;
         
         let publicHost = 'https://pay.unwiz.ai';
-        if (API_URL) {
+        if (apiUrl) {
           try {
-            const url = new URL(API_URL);
+            const url = new URL(apiUrl);
             publicHost = url.origin;
           } catch (e) {
             // fallback
@@ -426,14 +504,71 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      case 'diagnose': {
+        const diagnostics: any = {
+          timestamp: new Date().toISOString(),
+          os: {
+            platform: os.platform(),
+            release: os.release()
+          },
+          config: {
+            location: path.join(os.homedir(), '.wizpay', 'config.json'),
+            exists: false,
+            hasApiKey: false,
+            apiUrl: null
+          },
+          connectivity: {
+            targetUrl: null,
+            reachable: false,
+            statusCode: null,
+            error: null
+          }
+        };
+
+        // 1. Read config file
+        try {
+          const configPath = diagnostics.config.location;
+          if (fs.existsSync(configPath)) {
+            diagnostics.config.exists = true;
+            const data = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            diagnostics.config.hasApiKey = !!data.apiKey;
+            diagnostics.config.apiUrl = data.apiUrl;
+          }
+        } catch (e: any) {
+          diagnostics.config.error = e.message;
+        }
+
+        // 2. Resolve target URL & Test Connection
+        try {
+          const { apiKey, apiUrl } = getActiveConfig();
+          diagnostics.connectivity.targetUrl = apiUrl;
+          activeApiUrl = apiUrl;
+
+          const res = await fetch(`${apiUrl}/payment-forms`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${apiKey}` }
+          });
+
+          diagnostics.connectivity.reachable = true;
+          diagnostics.connectivity.statusCode = res.status;
+        } catch (e: any) {
+          diagnostics.connectivity.error = e.message;
+          diagnostics.connectivity.code = e.code;
+        }
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(diagnostics, null, 2)
+          }]
+        };
+      }
+
       default:
         throw new Error(`Tool not found: ${name}`);
     }
   } catch (error: any) {
-    return {
-      content: [{ type: 'text', text: `Error: ${error.message || error}` }],
-      isError: true,
-    };
+    return handleToolError(error, activeApiUrl);
   }
 });
 

@@ -63,8 +63,8 @@ To embed a dynamic catalog of products directly on your WordPress or static HTML
 <!-- Container where your product catalog will render -->
 <div id="wizpay-storefront" data-form-id="YOUR_PAYMENT_FORM_ID"></div>
 
-<!-- WizPay Storefront SDK JavaScript -->
-<script src="http://localhost:3000/sdk/wizpay.js"></script>
+<!-- WizPay Storefront SDK JavaScript (Local Development) -->
+<script src="http://127.0.0.1:3000/sdk/wizpay.js" defer></script>
 ```
 
 When users select products and click "Checkout", the SDK opens a secure checkout modal overlay inline on the page, keeping the customer journey unified without external redirects.
