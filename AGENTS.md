@@ -38,6 +38,12 @@ The workspace is structured as a monorepo containing:
 - **Landing Page Freeze**: To preserve brand voice and direct marketing alignments, the landing page file (`packages/web-app/src/app/page.tsx`) is frozen. Open-source contributors are strictly forbidden from modifying this file.
 - **Secret Scanning**: GitHub Secret Scanning and Push Protection must remain active. Do not commit or push live credentials (e.g., Paymongo API keys, Firebase service accounts). Use environment variables for local configuration.
 - **Value Proposition Mandate**: When writing copy, product features, or documentation, align with our core differentiators over direct PayMongo: inline/progressive overlay checkouts, conversational AI (MCP) configuration, visual storefront orchestration, and PH-localized logistics.
+- **WizPay MCP Loop Prevention & Fail-Fast Mandate**:
+  - When calling WizPay MCP tools, if a tool returns a `[FATAL CONFIG ERROR]` or `[FATAL AUTH ERROR]`, you MUST immediately halt execution and report the error verbatim to the user.
+  - Do NOT attempt to retry the tool call, write configuration overrides, or search for config files to modify. 
+  - Stop and provide the user with the exact troubleshooting instructions returned in the error payload (e.g. starting the server with `npm run dev:web` or regenerating keys).
+- **Proactive Diagnostics**:
+  - If you encounter a general network or connection error, call the `diagnose` tool first to verify config parsing, check Windows port bindings, and test API reachability before asking the user.
 
 ## 5. Common Development Commands
 - **Root-level Operations**:

@@ -22,6 +22,13 @@ WizPay Model Context Protocol (MCP) Server is a lightweight Node.js/TypeScript-b
 - Every time the MCP server logic or tooling is modified, the npm package (`@jedmamosto/wizpay-mcp-setup`) must be updated and published to reflect the changes.
 - **CI Validation**: Ensure that the project compiles cleanly (`npm run build`) before pushing or opening a PR to satisfy the automated CI validation suite.
 - **Secret Protection**: Do not hardcode or commit keys or testing credentials. Use environment configuration.
+- **Dynamic Configuration Handling**:
+  - The MCP server reads configurations dynamically from `~/.wizpay/config.json` on every tool invocation. Do not assume values are static or cache them across tool runs.
+- **Fail-Fast System Instructions**:
+  - The server is designed to append clear system instructions to fetch errors. These instructions are directed at AI agents to prevent infinite retries.
+  - If editing `src/index.ts`, ensure that all custom tool wrappers handle exceptions using the `handleToolError` helper to wrap status code and connectivity errors in the loop-prevention envelope.
+- **Diagnose Tool Maintenance**:
+  - Keep the `diagnose` tool up-to-date with any changes to the configuration schema or port bindings. It must remain a zero-parameter diagnostic tool.
 
 ## 5. Common Development Commands
 - Build project: `npm run build`
