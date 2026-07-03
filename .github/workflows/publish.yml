@@ -38,6 +38,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Update npm
+        run: npm install -g npm@latest
+
       - name: Install Monorepo Dependencies
         run: npm ci
 
@@ -45,5 +48,5 @@ jobs:
         run: npm run build:mcp
 
       - name: Publish to NPM
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         working-directory: packages/mcp-server
