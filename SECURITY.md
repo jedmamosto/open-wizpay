@@ -18,7 +18,7 @@ We actively support and patch security issues in the following versions of WizPa
 If you discover a security vulnerability or credential leak within this repository, please report it privately. 
 
 To report a vulnerability:
-1. Send an email to the project maintainers at **security@wizpay.ph** (or the designated security contact email).
+1. Send an email to the project maintainers at **jed@unwiz.ai** (or the designated security contact email).
 2. Include a detailed description of the issue, steps to reproduce, and potential impact.
 3. We will acknowledge receipt of your report within 48 hours and work with you to coordinate a security release.
 

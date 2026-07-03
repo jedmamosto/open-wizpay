@@ -44,3 +44,9 @@ npm run setup
 Restart Claude Desktop, reload your editor/extension, or reload Antigravity to load the new tools! You can now prompt the AI using natural language:
 > *"List my active payment forms on WizPay"*
 
+---
+
+## Support & Contact
+For support, inquiries, or bug reports, please email us at **jed@unwiz.ai**.
+
+
