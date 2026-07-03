@@ -44,6 +44,7 @@ The workspace is structured as a monorepo containing:
   - Stop and provide the user with the exact troubleshooting instructions returned in the error payload (e.g. starting the server with `npm run dev:web` or regenerating keys).
 - **Proactive Diagnostics**:
   - If you encounter a general network or connection error, call the `diagnose` tool first to verify config parsing, check Windows port bindings, and test API reachability before asking the user.
+- **PowerShell Command Syntax**: The local execution shell is PowerShell (Windows). Do not use bash statement separators like `&&` or `||` in command line parameters. Run commands in separate tool calls or use `;` as the statement separator.
 
 ## 5. Common Development Commands
 - **Root-level Operations**:
