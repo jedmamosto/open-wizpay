@@ -27,7 +27,7 @@ try {
     if (isLocalPublish) {
       console.log('Would publish to npm locally: npm publish --access public');
     } else {
-      console.log('Would skip local npm publish (automated via GitHub Actions on git tag push).');
+      console.log('Would skip local npm publish (automated via GitHub Actions Release PR on merge).');
     }
     console.log('Would run: git push --follow-tags');
     console.log('-----------------------\n');
@@ -44,8 +44,8 @@ try {
     execSync('npm publish --access public', { stdio: 'inherit' });
   } else {
     console.log('Skipping local npm publish.');
-    console.log('This package will be automatically built and published to NPM via GitHub Actions');
-    console.log('once the version tag is pushed to remote.');
+    console.log('Releases are now fully automated via Google Release-Please.');
+    console.log('To release, merge the automated Release PR created on GitHub.');
   }
 
   console.log('Pushing tags to git...');
