@@ -1,0 +1,32 @@
+name: Publish MCP Setup Package to NPM
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger only on version tags, e.g., v1.0.12
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Build MCP Server
+        run: npm run build:mcp
+
+      - name: Publish to NPM
+        run: npm publish --access public
+        working-directory: packages/mcp-server
