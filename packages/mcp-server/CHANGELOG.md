@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/jedmamosto/open-wizpay/compare/wizpay-mcp-setup-v1.1.0...wizpay-mcp-setup-v1.1.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **ci:** configure OIDC Trusted Publishing and clean bin paths ([ef0fc37](https://github.com/jedmamosto/open-wizpay/commit/ef0fc379cec67518c380779979b2d0c14b88e546))
+
 ## [1.1.0](https://github.com/jedmamosto/open-wizpay/compare/wizpay-mcp-setup-v1.0.11...wizpay-mcp-setup-v1.1.0) (2026-07-03)
 
 
