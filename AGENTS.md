@@ -12,7 +12,14 @@ The workspace is structured as a monorepo containing:
 1. **web-app** (`packages/web-app`): A Next.js payment engine, hosted storefront builder, and Embeddable Storefront SDK.
 2. **mcp-server** (`packages/mcp-server`): A TypeScript-based Model Context Protocol (MCP) server that enables AI agents to interactively configure and embed WizPay checkout forms.
 
-## 2. Directory Structure & Guide
+## 2. Progressive Disclosure Specification (Deep Specs)
+For deeper technical specifications, refer to the following documents in [agent_docs/](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/):
+- [Database Schema & Auth](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/database_schema.md) - Database collections (`payment-forms`, `checkout-sessions`, etc.) and Zod schemas.
+- [API Reference Specification](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/api_spec.md) - Backend API endpoints, authentication, and merchant scoping.
+- [MCP Server Specification](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/mcp_spec.md) - MCP tools schemas, fail-fast mechanism, and configuration.
+- [Local Setup & Env Guide](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/setup_guide.md) - Build, run, and environment variables.
+
+## 3. Directory Structure & Guide
 - [packages/web-app/](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/packages/web-app) - The web app / backend API platform. See [packages/web-app/AGENTS.md](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/packages/web-app/AGENTS.md) for details.
   - `src/` - App router pages, Firebase config, components, and helper utilities.
   - `public/sdk/` - Client-side SDK script containing the embeddable catalog widget.
@@ -20,7 +27,7 @@ The workspace is structured as a monorepo containing:
   - `src/` - MCP server implementation and schemas.
   - `scripts/` - Installation and integration setup scripts.
 
-## 3. Core Tech Stack
+## 4. Core Tech Stack
 - **Framework & Runtime**: Next.js 16 (App Router), React 18, Node.js (v18+)
 - **Languages**: TypeScript (Strict, no `any`)
 - **Styling**: Tailwind CSS
@@ -28,7 +35,7 @@ The workspace is structured as a monorepo containing:
 - **MCP Integration**: `@modelcontextprotocol/sdk`
 - **Payment Processing**: Paymongo API (GCash, Maya, GrabPay, cards, Billease)
 
-## 4. Engineering Rules & Mandates
+## 5. Engineering Rules & Mandates
 - **No `any`**: Adhere strictly to TypeScript types across all subprojects.
 - **Credential Protection**: Never return private/secret keys (e.g., Paymongo API keys) in client-facing API responses.
 - **Component-Driven Styling**: Keep styling consistent with tailwind.config.ts configuration tokens.
@@ -45,8 +52,10 @@ The workspace is structured as a monorepo containing:
 - **Proactive Diagnostics**:
   - If you encounter a general network or connection error, call the `diagnose` tool first to verify config parsing, check Windows port bindings, and test API reachability before asking the user.
 - **PowerShell Command Syntax**: The local execution shell is PowerShell (Windows). Do not use bash statement separators like `&&` or `||` in command line parameters. Run commands in separate tool calls or use `;` as the statement separator.
+- **Continuous Documentation Sync**: Update specifications in `agent_docs/` immediately when schemas, dependencies, APIs, or designs change.
+- **Rule File Line Limit**: Keep `AGENTS.md` strictly under 150 lines by offloading schemas and reference documentation to `agent_docs/`.
 
-## 5. Common Development Commands
+## 6. Common Development Commands
 - **Root-level Operations**:
   - Install all dependencies: `npm install`
   - Build everything: `npm run build`
@@ -56,4 +65,3 @@ The workspace is structured as a monorepo containing:
 - **mcp-server Commands** (from `/`):
   - Setup MCP client: `npm run setup:mcp`
   - Build MCP: `npm run build:mcp`
-
