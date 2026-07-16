@@ -50,11 +50,14 @@ The system features:
    ```sh
    npm run dev
    ```
-   Open [http://localhost:3000](http://localhost:3000) to view the administration dashboard.
+   Open [http://localhost:3000](http://localhost:3000) to view the Developer welcome portal and run pre-flight configuration diagnostics. Navigate to [http://localhost:3000/admin](http://localhost:3000/admin) to log in to the admin dashboard.
 
 ---
 
 ## Self-Hosted Deployment Guide (e.g. Vercel)
+
+> [!NOTE]
+> The official open-source repository's Vercel Git integration has been disconnected to accommodate its status as a pure self-hosted single-tenant monorepo. This prevents preview build failures on pull requests due to missing secrets. Developers should deploy and configure their own instances of WizPay on their personal/organization Vercel accounts.
 
 When deploying WizPay web app to Vercel or similar serverless hosting platforms, follow these configuration guidelines:
 

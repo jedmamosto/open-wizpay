@@ -43,7 +43,7 @@ npm install
    ```bash
    npm run dev:web
    ```
-   Open [http://localhost:3000](http://localhost:3000) to view the admin dashboard.
+    Open [http://localhost:3000](http://localhost:3000) to view the Developer welcome portal and run pre-flight configuration diagnostics. Navigate to [http://localhost:3000/admin](http://localhost:3000/admin) to log in to the admin dashboard.
 
 ### 3. Configure the MCP Server (`packages/mcp-server`)
 
