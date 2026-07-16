@@ -158,7 +158,7 @@ export default function Developers() {
               <div className="h-8 w-8 rounded bg-[#ccf15a]/10 flex items-center justify-center text-[#ccf15a]">
                 <Layers className="h-5 w-5" />
               </div>
-              <h2 className="text-xl font-bold text-white uppercase tracking-wider">Sovereign Deployment</h2>
+              <h2 className="text-xl font-bold text-white uppercase tracking-wider">Self-Hosted Deployment</h2>
             </div>
             
             <p className="text-sm text-[#a6d0b5] leading-relaxed">

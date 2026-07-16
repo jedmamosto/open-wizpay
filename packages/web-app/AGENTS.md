@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## 1. Project Overview
-WizPay is a sovereign unified checkout engine and storefront orchestration framework tailored for Philippine merchants. It separates itself from raw payment gateways (like PayMongo) by providing progressive inline checkout overlays (no redirects), an embeddable storefront SDK, a visual form builder, an AI-native MCP server configuration interface, and localized shipping calculations. Currently, it operates as a centralized hosted SaaS platform (Scenario B) routing merchant-supplied credentials and checkouts through our shared infrastructure, with the long-term goal of transitioning into a fully decentralized, self-hostable open-source engine (Scenario A). It provides:
+WizPay is an independent self-hosted checkout engine and storefront orchestration framework tailored for Philippine merchants. It separates itself from raw payment gateways (like PayMongo) by providing progressive inline checkout overlays (no redirects), an embeddable storefront SDK, a visual form builder, an AI-native MCP server configuration interface, and localized shipping calculations. Currently, it operates as a centralized hosted SaaS platform (Scenario B) routing merchant-supplied credentials and checkouts through our shared infrastructure, with the long-term goal of transitioning into a fully independent, self-hostable open-source engine (Scenario A). It provides:
 - A codeless administrative dashboard for hosted checkout configuration.
 - A public API and Embeddable Storefront SDK (`/public/sdk/wizpay.js`) for custom client developer integrations.
 

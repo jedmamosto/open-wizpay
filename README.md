@@ -1,6 +1,6 @@
 # WizPay Monorepo
 
-Welcome to **WizPay**, a sovereign, unified checkout engine and storefront orchestration framework designed specifically for Philippine MSMEs. It enables merchants to instantly receive GCash, Maya, GrabPay, Visa/Mastercard, and Billease BNPL payments directly into their own accounts without middleman fees.
+Welcome to **WizPay**, an independent, self-hosted, unified checkout engine and storefront orchestration framework designed specifically for Philippine MSMEs. It enables merchants to instantly receive GCash, Maya, GrabPay, Visa/Mastercard, and Billease BNPL payments directly into their own accounts without middleman fees.
 
 This repository is structured as a monorepo containing:
 1. **`packages/web-app`**: A Next.js payment engine, hosted storefront builder, and Embeddable Storefront SDK (built with Firebase and Paymongo).

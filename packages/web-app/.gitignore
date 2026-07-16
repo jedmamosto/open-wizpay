@@ -35,8 +35,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# private files
-civy-payment-form-builder-firebase-adminsdk-p6c57-84cb26451d.json
-
 # nested modules
 /wizpay-mcp
+
+# local sqlite database and env
+.env
+*.db
+*.db-journal
+
