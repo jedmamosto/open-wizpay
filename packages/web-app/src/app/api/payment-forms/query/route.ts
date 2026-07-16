@@ -1,8 +1,6 @@
-import admin from '@/firebase/adminConfig';
-import { NextRequest, NextResponse } from 'next/server';
+import { getDatabaseAdapter } from '@/lib/db';
 import { validateApiKey } from '@/utils/apiKeyAuth';
-
-const collectionName = 'payment-forms';
+import { NextRequest, NextResponse } from 'next/server';
 
 export const GET = async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
@@ -23,25 +21,27 @@ export const GET = async (request: NextRequest) => {
     }
 
     try {
-        const db = admin.firestore();
-        const docSnap = await db.collection(collectionName).doc(paymentFormId).get();
+        const db = getDatabaseAdapter();
+        const paymentForm = await db.getPaymentForm(paymentFormId);
 
-        if (docSnap.exists) {
-            const data = docSnap.data();
-            if (data) {
-                // If authenticated via API Key, verify ownership
-                if (apiKeyUserId && data.userId !== apiKeyUserId) {
-                    return NextResponse.json({ error: 'Forbidden: You do not own this payment form' }, { status: 403 });
-                }
-                const sanitized = { ...data };
-                delete sanitized.paymentFormPaymongoSecKey;
-                delete sanitized.paymentFormPaymongoPubKey;
-                return NextResponse.json(sanitized);
+        if (paymentForm) {
+            // If authenticated via API Key, verify ownership
+            if (apiKeyUserId && paymentForm.userId !== apiKeyUserId) {
+                return NextResponse.json(
+                    { error: 'Forbidden: You do not own this payment form' },
+                    { status: 403 }
+                );
             }
+            const {
+                paymentFormPaymongoSecKey,
+                paymentFormPaymongoPubKey,
+                ...sanitized
+            } = paymentForm;
+            return NextResponse.json(sanitized);
         }
         return NextResponse.json(null);
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: 'GET from Firestore failed' }, { status: 500 });
+        return NextResponse.json({ error: 'GET from database failed' }, { status: 500 });
     }
 };

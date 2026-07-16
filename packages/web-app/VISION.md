@@ -1,14 +1,14 @@
-# WizPay: Sovereign Unified Checkout for Philippine MSMEs
+# WizPay: Self-Hosted Unified Checkout for Philippine MSMEs
 *A Strategic Blueprint for Open-Access Local Payments and Storefront Orchestration*
 
 ---
 
 ## 1. Executive Summary
-WizPay is an open-source, sovereign payment engine and storefront orchestration framework. Our core mission is the unconditional democratization of online transactions for Philippine merchants.
+WizPay is an open-source, self-hosted payment engine and storefront orchestration framework. Our core mission is the unconditional democratization of online transactions for Philippine merchants.
 
 WizPay is structured in two distinct phases:
 1. **Phase 1 (Current - Scenario B): Centralized Hosted SaaS.** We host the core database, APIs, and dashboard. Merchants sign up and input their own PayMongo API credentials. Transactions are routed securely through our centralized Next.js/Firebase infrastructure directly to their primary accounts.
-2. **Phase 2 (End Goal - Scenario A): Sovereign Self-Hostable Engine.** WizPay will transition to a fully decoupled, open-source model where merchants deploy their own independent instances of the database and servers, achieving complete data sovereignty.
+2. **Phase 2 (End Goal - Scenario A): Independent Self-Hostable Engine.** WizPay will transition to a fully decoupled, open-source model where merchants deploy their own independent instances of the database and servers, achieving complete data ownership.
 
 WizPay serves a dual-pathway architecture:
 1. **For Non-Technical Merchants:** A codeless dashboard enabling the visual composition of secure checkout forms and copy-paste embedding scripts.
@@ -19,7 +19,7 @@ WizPay serves a dual-pathway architecture:
 ## 2. Core Pillars of the Platform
 
 * **Progressive Checkout Overlay:** A modern checkout UX. Instead of redirecting buyers away from the merchant's site, a secure checkout modal slides open inline. The user completes payment authorizations (GCash OTP, Maya authorization) and slides closed seamlessly.
-* **Sovereign Data Custody:** Direct gateway routing. Merchant credentials and transactions are stored securely in their own Firebase instance, completely removing third-party fees, clearing periods, and intermediate accounting risks.
+* **Self-Hosted Data Custody:** Direct gateway routing. Merchant credentials and transactions are stored securely in their own database instance, completely removing third-party fees, clearing periods, and intermediate accounting risks.
 * **Codeless Embed Builder:** A web configuration panel that auto-generates clean Javascript embed scripts (`<script src=".../sdk/wizpay.js">`) and inline responsive `<iframe>` code blocks.
 
 ---

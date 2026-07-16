@@ -1,17 +1,5 @@
-import queryDocument from '@/utils/queryDocument';
+import { DBProduct, getDatabaseAdapter } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import admin from '@/firebase/adminConfig';
-import { Product } from '@/schemas/payment-form';
-
-interface StoredCheckoutSession {
-    checkoutSessionId: string;
-    paymentFormId: string;
-    customerName: string;
-    customerEmail: string;
-    customerPhone: string;
-    selectedProducts: Product[];
-    createdAt: string;
-}
 
 export const GET = async (request: NextRequest) => {
     try {
@@ -27,12 +15,10 @@ export const GET = async (request: NextRequest) => {
             );
         }
 
+        const db = getDatabaseAdapter();
+
         // Get payment form data to retrieve user's Paymongo credentials
-        const paymentFormData = await queryDocument(
-            'payment-forms',
-            'id',
-            paymentFormId
-        );
+        const paymentFormData = await db.getPaymentForm(paymentFormId);
 
         if (!paymentFormData) {
             return NextResponse.json(
@@ -43,7 +29,10 @@ export const GET = async (request: NextRequest) => {
             );
         }
 
-        const secretKey = paymentFormData.paymentFormPaymongoSecKey;
+        // In single-tenant self-hosted mode, read secrets from environment variables.
+        // Fall back to database values if env keys are not present.
+        const secretKey =
+            process.env.PAYMONGO_SECRET_KEY || paymentFormData.paymentFormPaymongoSecKey;
         if (!secretKey) {
             return NextResponse.json(
                 {
@@ -61,19 +50,12 @@ export const GET = async (request: NextRequest) => {
         }
 
         console.log('Querying database for checkout session with token:', token);
-        const sessionResult = await queryDocument('checkout-sessions', 'paymentToken', token);
+        const recentStoredSession = await db.getCheckoutSessionByToken(token);
 
-        if (!sessionResult) {
+        if (!recentStoredSession) {
             console.log('No checkout session found for token:', token);
             return NextResponse.redirect(paymentFormData.paymentFormCancelURL);
         }
-
-        const dbSessionData = sessionResult.queryData as any;
-        const recentStoredSession = {
-            ...dbSessionData,
-            checkoutSessionId: dbSessionData.checkoutSessionId,
-            firestoreDocId: sessionResult.queryId
-        };
 
         console.log('Found stored session:', recentStoredSession.checkoutSessionId);
 
@@ -102,15 +84,23 @@ export const GET = async (request: NextRequest) => {
         const sessionData = checkoutSession.data;
         const paymentStatus = sessionData.attributes.payment_intent?.attributes?.status;
 
-        console.log('Payment status for session:', recentStoredSession.checkoutSessionId, 'is:', paymentStatus);
+        console.log(
+            'Payment status for session:',
+            recentStoredSession.checkoutSessionId,
+            'is:',
+            paymentStatus
+        );
 
         // Check if payment was successful
         if (paymentStatus === 'succeeded') {
             const originalSuccessUrl = paymentFormData.paymentFormSuccessURL;
 
             // Enforce idempotency: check if already processed
-            if (dbSessionData.status === 'paid') {
-                console.log('Session already paid and processed:', recentStoredSession.checkoutSessionId);
+            if (recentStoredSession.status === 'paid') {
+                console.log(
+                    'Session already paid and processed:',
+                    recentStoredSession.checkoutSessionId
+                );
                 return NextResponse.redirect(originalSuccessUrl);
             }
 
@@ -128,10 +118,12 @@ export const GET = async (request: NextRequest) => {
                         customerPhone: recentStoredSession.customerPhone,
                         paymentFormId: paymentFormId,
                         products: recentStoredSession.selectedProducts,
-                        totalAmount: recentStoredSession.selectedProducts?.reduce(
-                            (total: number, product: Product) => total + (product.productPrice || 0),
-                            0
-                        ) || 0,
+                        totalAmount:
+                            recentStoredSession.selectedProducts?.reduce(
+                                (total: number, product: DBProduct) =>
+                                    total + (product.productPrice || 0),
+                                0
+                            ) || 0,
                         currency: 'PHP',
                         paidAt: new Date().toISOString(),
                     };
@@ -157,12 +149,14 @@ export const GET = async (request: NextRequest) => {
 
             // Mark session as paid in database to guarantee idempotency
             try {
-                const db = admin.firestore();
-                await db.collection('checkout-sessions').doc(recentStoredSession.firestoreDocId).update({
+                await db.updateCheckoutSession(recentStoredSession.checkoutSessionId, {
                     status: 'paid',
-                    paidAt: new Date().toISOString()
+                    paidAt: new Date().toISOString(),
                 });
-                console.log('Checkout session marked as paid in database:', recentStoredSession.firestoreDocId);
+                console.log(
+                    'Checkout session marked as paid in database:',
+                    recentStoredSession.checkoutSessionId
+                );
             } catch (dbError) {
                 console.error('Failed to update checkout session status:', dbError);
             }
@@ -181,15 +175,10 @@ export const GET = async (request: NextRequest) => {
         try {
             const paymentFormId = new URL(request.url).searchParams.get('form');
             if (paymentFormId) {
-                const paymentFormData = await queryDocument(
-                    'payment-forms',
-                    'id',
-                    paymentFormId
-                );
+                const db = getDatabaseAdapter();
+                const paymentFormData = await db.getPaymentForm(paymentFormId);
                 if (paymentFormData) {
-                    return NextResponse.redirect(
-                        paymentFormData.paymentFormCancelURL
-                    );
+                    return NextResponse.redirect(paymentFormData.paymentFormCancelURL);
                 }
             }
         } catch (fallbackError) {

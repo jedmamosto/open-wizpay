@@ -1,18 +1,17 @@
 // route.ts
+import { getDatabaseAdapter } from '@/lib/db';
 import { CheckoutInfo } from '@/schemas/checkout-info';
 import { Product } from '@/schemas/payment-form';
-import queryDocument from '@/utils/queryDocument';
-import uploadDocument from '@/utils/uploadDocument';
-import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { NextRequest, NextResponse } from 'next/server';
 
 export const POST = async (request: NextRequest) => {
     const url = new URL(request.url);
     const paymentFormId = url.searchParams.get('paymentFormId');
 
-    if (!paymentFormId)
+    if (!paymentFormId) {
         return NextResponse.json({ error: 'No payment form ID' });
-    // console.log('Payment Form ID: ', paymentFormId);
+    }
 
     try {
         const requestedData = await request.json();
@@ -22,17 +21,13 @@ export const POST = async (request: NextRequest) => {
             checkoutPhone,
             selectedProducts,
         }: CheckoutInfo & { selectedProducts: Product[] } = requestedData;
-        // console.log('Requested Data: ', requestedData);
 
-        const paymentFormData = await queryDocument(
-            'payment-forms',
-            'id',
-            paymentFormId
-        );
-        // console.log(paymentFormData);
+        const db = getDatabaseAdapter();
+        const paymentFormData = await db.getPaymentForm(paymentFormId);
 
-        if (!paymentFormData)
+        if (!paymentFormData) {
             return NextResponse.json({ error: 'No payment form data' });
+        }
 
         const paymentToken = crypto.randomUUID();
 
@@ -40,14 +35,17 @@ export const POST = async (request: NextRequest) => {
         const lineItems = [];
         for (const clientProduct of selectedProducts) {
             const dbProduct = paymentFormData.paymentFormProducts?.find(
-                (p: Product) => 
-                    (p.productId && p.productId === clientProduct.productId) || 
+                (p: Product) =>
+                    (p.productId && p.productId === clientProduct.productId) ||
                     p.productName === clientProduct.productName
             );
             if (!dbProduct) {
-                return NextResponse.json({ 
-                    error: `Invalid product selection: "${clientProduct.productName}" is not on this form.` 
-                }, { status: 400 });
+                return NextResponse.json(
+                    {
+                        error: `Invalid product selection: "${clientProduct.productName}" is not on this form.`,
+                    },
+                    { status: 400 }
+                );
             }
             lineItems.push({
                 currency: 'PHP',
@@ -57,10 +55,14 @@ export const POST = async (request: NextRequest) => {
                 quantity: 1,
             });
         }
-        // console.log('Line Items: ', lineItems);
 
-        const secretKey = paymentFormData.paymentFormPaymongoSecKey;
-        if (!secretKey) return NextResponse.json({ error: 'No secret key' });
+        // In single-tenant self-hosted mode, read secrets from environment variables.
+        // Fall back to database values if env keys are not present.
+        const secretKey =
+            process.env.PAYMONGO_SECRET_KEY || paymentFormData.paymentFormPaymongoSecKey;
+        if (!secretKey) {
+            return NextResponse.json({ error: 'No secret key configured' }, { status: 400 });
+        }
 
         const createCheckoutSession = await fetch(
             'https://api.paymongo.com/v1/checkout_sessions',
@@ -93,7 +95,9 @@ export const POST = async (request: NextRequest) => {
                                 'paymaya',
                             ],
                             cancel_url: paymentFormData.paymentFormCancelURL,
-                            success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payment-verify?form=${paymentFormId}&token=${paymentToken}`,
+                            success_url: `${
+                                process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+                            }/api/payment-verify?form=${paymentFormId}&token=${paymentToken}`,
                             metadata: {
                                 payment_form_id: paymentFormId,
                                 webhook_url: paymentFormData.paymentFormWebhookURL,
@@ -109,25 +113,28 @@ export const POST = async (request: NextRequest) => {
         );
 
         const checkoutResponse = await createCheckoutSession.json();
-        // console.log('Checkout Session Response: ', checkoutResponse);
-
-        const checkoutURL = checkoutResponse.data.attributes.checkout_url;
-        const checkoutSessionId = checkoutResponse.data.id;
-        // console.log('Checkout URL: ', checkoutURL);
 
         if (createCheckoutSession.ok) {
+            const checkoutURL = checkoutResponse.data.attributes.checkout_url;
+            const checkoutSessionId = checkoutResponse.data.id;
+
             // Store checkout session data for later verification
             try {
-                await uploadDocument('checkout-sessions', {
+                await db.createCheckoutSession({
                     checkoutSessionId,
                     paymentFormId,
                     customerName: checkoutName,
                     customerEmail: checkoutEmail,
                     customerPhone: checkoutPhone,
-                    selectedProducts,
+                    selectedProducts: selectedProducts.map((p) => ({
+                        productId: p.productId || '',
+                        productName: p.productName,
+                        productPrice: p.productPrice,
+                        quantity: 1, // Store as Product-like structured item matching DBProduct
+                    })),
                     createdAt: new Date().toISOString(),
                     status: 'pending',
-                    paymentToken
+                    paymentToken,
                 });
                 console.log('Checkout session stored:', checkoutSessionId);
             } catch (error) {
@@ -147,4 +154,3 @@ export const POST = async (request: NextRequest) => {
         return NextResponse.json({ error: 'Internal server error' });
     }
 };
-

@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## 1. Project Overview
-This workspace is the parent repository for the **WizPay** project ecosystem, a sovereign unified checkout engine and storefront orchestration framework tailored for Philippine merchants. WizPay goes beyond a simple payment gateway (like PayMongo) by providing:
+This workspace is the parent repository for the **WizPay** project ecosystem, an independent, self-hosted checkout engine and storefront orchestration framework tailored for Philippine merchants. WizPay goes beyond a simple payment gateway (like PayMongo) by providing:
 1. **Progressive Checkout Overlay**: Inline checkout/modal overlays instead of jarring external redirects.
 2. **Codeless Storefront Builder**: Visually compose product checkouts & copy-paste SDK scripts on any site.
 3. **AI-Native MCP Integration**: An MCP server that enables AI agents to configure, update, and embed checkout portals conversationally.
@@ -14,6 +14,9 @@ The workspace is structured as a monorepo containing:
 
 ## 2. Progressive Disclosure Specification (Deep Specs)
 For deeper technical specifications, refer to the following documents in [agent_docs/](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/):
+- [Architecture Documentation](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/architecture_documentation.md) - Formal arc42 architecture manual detailing scope, contexts, and runtime views.
+- [Architecture Decisions (ADRs)](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/adr.md) - Concise logs of all technical decisions and consequences.
+- [Self-Hosted Specification](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/self_hosted_engine_spec.md) - Detailed folder layout, schema, types, and signature checks.
 - [Database Schema & Auth](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/database_schema.md) - Database collections (`payment-forms`, `checkout-sessions`, etc.) and Zod schemas.
 - [API Reference Specification](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/api_spec.md) - Backend API endpoints, authentication, and merchant scoping.
 - [MCP Server Specification](file:///c:/Users/ASUS/Documents/VSCode/oz_tech/agent_docs/mcp_spec.md) - MCP tools schemas, fail-fast mechanism, and configuration.
