@@ -81,6 +81,9 @@ If this configuration is missing, run `npm run setup:mcp` to generate a fresh on
 
 ## 4. Production Deployments (e.g. Vercel)
 
+> [!NOTE]
+> The official repository's Vercel Git integration has been disconnected to accommodate its status as a pure self-hosted monorepo. This prevents unconfigured preview build checks from failing on pull requests. Developers should connect their own repositories or forks to Vercel and configure their own environment secrets.
+
 When self-hosting the WizPay web app in production:
 
 ### Vercel Project Settings
