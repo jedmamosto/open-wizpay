@@ -76,3 +76,20 @@ The configuration for the Model Context Protocol is stored in your user profile:
 }
 ```
 If this configuration is missing, run `npm run setup:mcp` to generate a fresh one.
+
+---
+
+## 4. Production Deployments (e.g. Vercel)
+
+When self-hosting the WizPay web app in production:
+
+### Vercel Project Settings
+1. **Root Directory**: `packages/web-app`
+2. **Build Command**: Set to `npx prisma generate && next build`
+3. **Environment Variables**:
+   - `DATABASE_PROVIDER`: Set to `firestore` or `sqlite`.
+     - *Caution on Vercel SQLite*: Because Vercel uses ephemeral serverless functions, SQLite databases written to local files will not persist. If `DATABASE_PROVIDER` is set to `sqlite`, you should modify the database datasource provider in `prisma/schema.prisma` to `postgresql` (or other remote SQL providers) and supply the remote database URL.
+   - `DATABASE_URL`: Connection string to your remote SQL database.
+   - `NEXT_PUBLIC_APP_URL`: Your production domain URL.
+   - Standard Firebase environment variables matching your `.env.local` settings.
+

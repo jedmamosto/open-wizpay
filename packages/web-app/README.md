@@ -54,6 +54,27 @@ The system features:
 
 ---
 
+## Self-Hosted Deployment Guide (e.g. Vercel)
+
+When deploying WizPay web app to Vercel or similar serverless hosting platforms, follow these configuration guidelines:
+
+### 1. Build Command
+Since WizPay uses Prisma for local schema management, you need to generate the Prisma client before building Next.js:
+- Set **Build Command** in Vercel to:
+  ```bash
+  npx prisma generate && next build
+  ```
+
+### 2. Environment Variables
+In your Vercel Project Settings, add the following variables:
+- `DATABASE_PROVIDER`: Set to `firestore` or `sqlite`.
+  - **Note on `sqlite` on Vercel**: Vercel functions run in ephemeral, read-only serverless containers. If using `sqlite` with a local file (e.g., `file:./dev.db`), your data will reset on every cold start. For persistent SQL storage, modify `packages/web-app/prisma/schema.prisma` to use `postgresql` (e.g. Supabase, Neon) and set `DATABASE_URL` to your remote connection string.
+- `DATABASE_URL`: Connection string for SQL database (only required if `DATABASE_PROVIDER` is `sqlite` or remote equivalent).
+- `NEXT_PUBLIC_APP_URL`: Set to your deployed Vercel domain (e.g., `https://your-app.vercel.app`).
+- Add all standard Firebase variables (`NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PRIVATE_FIREBASE_PRIVATE_KEY`, etc.).
+
+---
+
 ## Developer Integration Guide
 
 ### 1. Embeddable Storefront SDK
