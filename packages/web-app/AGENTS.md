@@ -1,18 +1,19 @@
 # AGENTS.md
 
 ## 1. Project Overview
-WizPay is an independent self-hosted checkout engine and storefront orchestration framework tailored for Philippine merchants. It separates itself from raw payment gateways (like PayMongo) by providing progressive inline checkout overlays (no redirects), an embeddable storefront SDK, a visual form builder, an AI-native MCP server configuration interface, and localized shipping calculations. Currently, it operates as a centralized hosted SaaS platform (Scenario B) routing merchant-supplied credentials and checkouts through our shared infrastructure, with the long-term goal of transitioning into a fully independent, self-hostable open-source engine (Scenario A). It provides:
-- A codeless administrative dashboard for hosted checkout configuration.
+WizPay is an independent self-hosted checkout engine and storefront orchestration framework tailored for Philippine merchants. It separates itself from raw payment gateways (like PayMongo) by providing progressive inline checkout overlays (no redirects), an embeddable storefront SDK, a visual form builder, an AI-native MCP server configuration interface, and localized shipping calculations. It runs as a single-tenant self-hosted setup, letting merchants process payments directly with 0% platform transaction fees. It provides:
+- A codeless administrative dashboard for checkout configuration.
 - A public API and Embeddable Storefront SDK (`/public/sdk/wizpay.js`) for custom client developer integrations.
 
 ## 2. Directory Structure & Guide
 * `src/app/` - Next.js App Router directories.
-  * `/admin/` - Admin dashboard, form creation/management, and user management.
+  * `/` - Local Developer welcome page and pre-flight configuration diagnostics.
+  * `/admin/` - Admin dashboard, form creation/management, and developer settings.
   * `/payment-form/[paymentFormId]/` - Public high-converting checkout route.
   * `/api/` - Backend API endpoints.
     * `/api/v1/forms/[paymentFormId]/` - Sanitized public JSON configuration endpoint for storefront widgets.
     * `/api/paymongo/` - Server-side Paymongo checkout session creator.
-  * `/login/` & `/sign-up/` - Authentication pages.
+  * `/login/` - Admin authentication login page.
 * `public/sdk/` - Client-side SDK script containing the embeddable catalog widget.
 * `src/components/ui/` - Shared UI elements (Shadcn/Radix-based).
 * `src/context/` - Global context, including AuthContext for Firebase authentication.
