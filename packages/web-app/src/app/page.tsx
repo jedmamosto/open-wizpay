@@ -40,8 +40,8 @@ export default async function Home() {
         isDatabaseConnected,
         hasPaymongoPubKey: !!process.env.PAYMONGO_PUBLIC_KEY,
         hasPaymongoSecKey: !!process.env.PAYMONGO_SECRET_KEY,
-        hasAdminEmail: !!process.env.WIZPAY_ADMIN_EMAIL,
-        hasAdminPassword: !!process.env.WIZPAY_ADMIN_PASSWORD,
+        hasAdminEmail: !!process.env.ADMIN_EMAIL,
+        hasAdminPassword: !!process.env.ADMIN_PASSWORD,
         hasFirebaseApiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
         hasFirebaseProjectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
         hasFirebaseServiceAccount: !!(

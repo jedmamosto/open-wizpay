@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const data = await response.json();
                 if (data.user) {
                     setUser({
-                        uid: 'admin-user-id', // Static uid for compatibility with existing dashboard forms queries
+                        uid: data.user.uid || 'admin-user-id',
                         email: data.user.email,
                         name: data.user.name,
                         role: data.user.role,

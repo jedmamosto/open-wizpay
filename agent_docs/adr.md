@@ -53,7 +53,7 @@ This document tracks the core architectural decisions made for the WizPay projec
 *   **Context**: 
     Self-hosted single-tenant environments do not require complex, database-backed multi-user authentication systems. 
 *   **Decision**: 
-    For self-hosted SQL database mode, the admin dashboard will authenticate using a single admin account defined in the environment via `WIZPAY_ADMIN_EMAIL` and `WIZPAY_ADMIN_PASSWORD` (secured via stateless JWT cookies). The app will fall back to Firebase Auth only if Firestore mode is explicitly active.
+    For self-hosted SQL database mode, the admin dashboard will authenticate using a single admin account defined in the environment via `ADMIN_EMAIL` and `ADMIN_PASSWORD` (secured via stateless JWT cookies). The app will fall back to Firebase Auth only if Firestore mode is explicitly active.
 *   **Consequences**: 
     *   *Easier*: Eliminates user signup/login tables in SQLite and removes external auth server dependencies.
     *   *Harder*: Adding team members or multiple admin roles to a single instance requires manual code changes or migrating to Firestore mode.
