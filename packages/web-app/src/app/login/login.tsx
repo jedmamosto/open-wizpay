@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-function AuthContent() {
+function AuthContent({ isDefaultCredentials }: { isDefaultCredentials: boolean }) {
     const { user, signOut, checkSession } = useAuth();
     const router = useRouter();
     const [email, setEmail] = useState('');
@@ -96,6 +96,36 @@ function AuthContent() {
                 </div>
             </div>
 
+            {/* Help Callout for Self-Hosted Single-Tenant Mode */}
+            <div className="p-3.5 bg-[#062517]/85 border border-[#1d3a2c]/80 rounded-lg text-left text-xs space-y-2">
+                <div className="flex items-center gap-2 text-[#ccf15a] font-bold uppercase tracking-wider text-[10px]">
+                    <span className="h-1.5 w-1.5 bg-[#ccf15a] rounded-full animate-pulse" />
+                    Self-Hosted Setup Info
+                </div>
+                <p className="text-[#a6d0b5] leading-normal font-sans">
+                    This is a single-tenant instance. Access is secured using environment variables.
+                </p>
+                {isDefaultCredentials ? (
+                    <>
+                        <div className="bg-[#001208]/60 p-2.5 rounded border border-[#112f21]/80 font-mono text-[11px] text-[#c8ebd5] space-y-1">
+                            <p>
+                                <span className="text-[#c5c9b1]/60">Email:</span> <code className="text-white select-all">admin@wizpay.local</code>
+                            </p>
+                            <p>
+                                <span className="text-[#c5c9b1]/60">Password:</span> <code className="text-white select-all">admin-secure-password</code>
+                            </p>
+                        </div>
+                        <p className="text-[10px] text-[#c5c9b1]/50 leading-normal font-sans">
+                            Set custom credentials via <code className="bg-[#001208] px-1 rounded text-[#c8ebd5]">ADMIN_EMAIL</code> and <code className="bg-[#001208] px-1 rounded text-[#c8ebd5]">ADMIN_PASSWORD</code> in your <code className="text-white">.env.local</code>.
+                        </p>
+                    </>
+                ) : (
+                    <p className="text-[10px] text-[#6dfe9c] leading-normal font-sans font-medium">
+                        ✓ Using custom credentials configured in your environment.
+                    </p>
+                )}
+            </div>
+
             <div className="space-y-4">
                 {error && (
                     <Alert variant="destructive" className="bg-red-950/50 border-red-900 text-red-200">
@@ -145,14 +175,14 @@ function AuthContent() {
     );
 }
 
-function Login() {
+function Login({ isDefaultCredentials = true }: { isDefaultCredentials?: boolean }) {
     return (
         <Suspense fallback={
             <div className="flex h-screen w-screen items-center justify-center bg-[#00180c]">
                 <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-[#ccf15a]"></div>
             </div>
         }>
-            <AuthContent />
+            <AuthContent isDefaultCredentials={isDefaultCredentials} />
         </Suspense>
     );
 }
