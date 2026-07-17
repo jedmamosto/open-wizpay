@@ -1,12 +1,8 @@
 import { FormAppearance, PaymentForm } from '@/schemas/payment-form';
-import deleteDocument from '@/utils/deleteDocument';
-import updateDocument from '@/utils/updateDocument';
-import uploadDocument from '@/utils/uploadDocument';
 import { NextRequest, NextResponse } from 'next/server';
-import admin from '@/firebase/adminConfig';
+import { getDatabaseAdapter } from '@/lib/db';
 import { getUserId } from '@/utils/authHelpers';
 
-const collectionName = 'payment-forms';
 const idFieldName = 'paymentFormId';
 
 const defaultAppearance: FormAppearance = {
@@ -47,11 +43,12 @@ export const POST = async (request: NextRequest) => {
             ...(appearance && { appearance }),
         };
 
-        await uploadDocument(collectionName, paymentFormData);
-        return NextResponse.json({ message: 'POST to Firestore successful' });
+        const db = getDatabaseAdapter();
+        await db.savePaymentForm(paymentFormData);
+        return NextResponse.json({ message: 'POST to database successful' });
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: 'POST to Firestore failed' }, { status: 500 });
+        return NextResponse.json({ error: 'POST to database failed' }, { status: 500 });
     }
 };
 
@@ -62,12 +59,8 @@ export const GET = async (request: NextRequest) => {
     }
 
     try {
-        const db = admin.firestore();
-        const snapshot = await db.collection(collectionName).where('userId', '==', userId).get();
-        const paymentForms = snapshot.docs.map(doc => ({
-            [idFieldName]: doc.id,
-            ...doc.data()
-        })) as (PaymentForm & { paymentFormId: string })[];
+        const db = getDatabaseAdapter();
+        const paymentForms = await db.listPaymentForms(userId);
 
         // Mask sensitive merchant credentials and ensure appearance data
         const processedForms = paymentForms.map((form) => {
@@ -92,7 +85,7 @@ export const GET = async (request: NextRequest) => {
         return NextResponse.json(processedForms);
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: 'GET from Firestore failed' }, { status: 500 });
+        return NextResponse.json({ error: 'GET from database failed' }, { status: 500 });
     }
 };
 
@@ -109,17 +102,14 @@ export const PATCH = async (request: NextRequest) => {
     }
 
     try {
-        const db = admin.firestore();
-        const docRef = db.collection(collectionName).doc(paymentFormId);
-        const docSnap = await docRef.get();
-        if (!docSnap.exists) {
+        const db = getDatabaseAdapter();
+        const existingForm = await db.getPaymentForm(paymentFormId);
+        if (!existingForm) {
             return NextResponse.json({ error: 'Payment form not found' }, { status: 404 });
         }
-        
-        const existingForm = docSnap.data();
 
         // Enforce ownership: only allow updates if the user owns the form
-        const isOwner = existingForm?.userId === userId;
+        const isOwner = existingForm.userId === userId;
 
         if (!isOwner) {
             return NextResponse.json({ error: 'Forbidden: You do not own this payment form' }, { status: 403 });
@@ -130,7 +120,7 @@ export const PATCH = async (request: NextRequest) => {
         // If the submitted secret key is masked (i.e. contains bullet points), do not overwrite the existing key
         const submittedSecKey = paymentFormData.paymentFormPaymongoSecKey;
         if (submittedSecKey && (submittedSecKey.includes('••••') || submittedSecKey.includes('●') || submittedSecKey.includes('***'))) {
-            paymentFormData.paymentFormPaymongoSecKey = existingForm?.paymentFormPaymongoSecKey;
+            paymentFormData.paymentFormPaymongoSecKey = existingForm.paymentFormPaymongoSecKey;
         }
 
         // Enforce resolved userId
@@ -141,11 +131,14 @@ export const PATCH = async (request: NextRequest) => {
             paymentFormData.appearance = defaultAppearance;
         }
 
-        await updateDocument(collectionName, paymentFormId, paymentFormData);
-        return NextResponse.json({ message: 'PATCH to Firestore successful' });
+        // Include paymentFormId to perform update/upsert
+        paymentFormData.paymentFormId = paymentFormId;
+
+        await db.savePaymentForm(paymentFormData);
+        return NextResponse.json({ message: 'PATCH to database successful' });
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: 'PATCH to Firestore failed' }, { status: 500 });
+        return NextResponse.json({ error: 'PATCH to database failed' }, { status: 500 });
     }
 };
 
@@ -162,27 +155,25 @@ export const DELETE = async (request: NextRequest) => {
     }
 
     try {
-        const db = admin.firestore();
-        const docRef = db.collection(collectionName).doc(paymentFormId);
-        const docSnap = await docRef.get();
-        if (!docSnap.exists) {
+        const db = getDatabaseAdapter();
+        const existingForm = await db.getPaymentForm(paymentFormId);
+        if (!existingForm) {
             return NextResponse.json({ error: 'Payment form not found' }, { status: 404 });
         }
-        const existingForm = docSnap.data();
         
-        const isOwner = existingForm?.userId === userId;
+        const isOwner = existingForm.userId === userId;
 
         if (!isOwner) {
             return NextResponse.json({ error: 'Forbidden: You do not own this payment form' }, { status: 403 });
         }
 
-        await deleteDocument(collectionName, paymentFormId);
+        await db.deletePaymentForm(paymentFormId);
         return NextResponse.json({
-            message: 'DELETE from Firestore successful',
+            message: 'DELETE from database successful',
         });
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: 'DELETE from Firestore failed' }, { status: 500 });
+        return NextResponse.json({ error: 'DELETE from database failed' }, { status: 500 });
     }
 };
 

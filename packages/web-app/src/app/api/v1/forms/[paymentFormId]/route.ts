@@ -1,7 +1,5 @@
-import admin from '@/firebase/adminConfig';
+import { getDatabaseAdapter } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-
-const collectionName = 'payment-forms';
 
 // CORS response helper function
 const corsResponse = (data: unknown, status = 200) => {
@@ -32,23 +30,20 @@ export const GET = async (
             return corsResponse({ error: 'Payment form ID is required' }, 400);
         }
 
-        const db = admin.firestore();
-        const docSnap = await db.collection(collectionName).doc(paymentFormId).get();
+        const db = getDatabaseAdapter();
+        const paymentForm = await db.getPaymentForm(paymentFormId);
 
-        if (!docSnap.exists) {
+        if (!paymentForm) {
             return corsResponse({ error: 'Payment form not found' }, 404);
         }
 
-        const paymentForm = docSnap.data();
-        if (!paymentForm) {
-            return corsResponse({ error: 'Failed to read form data' }, 500);
-        }
-
         // Sanitize sensitive credentials and administrative metadata
-        const sanitized = { ...paymentForm };
-        delete sanitized.paymentFormPaymongoSecKey;
-        delete sanitized.paymentFormPaymongoPubKey;
-        delete sanitized.userId;
+        const {
+            paymentFormPaymongoSecKey,
+            paymentFormPaymongoPubKey,
+            userId,
+            ...sanitized
+        } = paymentForm;
 
         return corsResponse(sanitized);
     } catch (error) {

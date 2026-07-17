@@ -37,6 +37,32 @@ export class PrismaAdapter implements IDatabaseRepository {
         }
     }
 
+    async listPaymentForms(userId: string): Promise<PaymentForm[]> {
+        try {
+            const forms = await prisma.paymentForm.findMany({
+                where: { userId },
+            });
+
+            return forms.map((form) => ({
+                paymentFormId: form.id,
+                id: form.id,
+                paymentFormTitle: form.paymentFormTitle,
+                paymentFormDescription: form.paymentFormDescription,
+                paymentFormSuccessURL: form.paymentFormSuccessURL,
+                paymentFormCancelURL: form.paymentFormCancelURL,
+                paymentFormWebhookURL: form.paymentFormWebhookURL,
+                paymentFormPaymongoPubKey: process.env.PAYMONGO_PUBLIC_KEY || '',
+                paymentFormPaymongoSecKey: process.env.PAYMONGO_SECRET_KEY || '',
+                paymentFormProducts: JSON.parse(form.paymentFormProducts),
+                userId: form.userId,
+                appearance: JSON.parse(form.appearance),
+            })) as PaymentForm[];
+        } catch (error) {
+            console.error('PrismaAdapter: Error listing payment forms:', error);
+            return [];
+        }
+    }
+
     async savePaymentForm(
         data: Omit<PaymentForm, 'paymentFormId'> & { paymentFormId?: string }
     ): Promise<string> {

@@ -26,6 +26,7 @@ export interface DBCheckoutSession {
 
 export interface IDatabaseRepository {
     getPaymentForm(paymentFormId: string): Promise<PaymentForm | null>;
+    listPaymentForms(userId: string): Promise<PaymentForm[]>;
     savePaymentForm(data: Omit<PaymentForm, 'paymentFormId'> & { paymentFormId?: string }): Promise<string>;
     deletePaymentForm(paymentFormId: string): Promise<void>;
     createCheckoutSession(data: DBCheckoutSession): Promise<void>;

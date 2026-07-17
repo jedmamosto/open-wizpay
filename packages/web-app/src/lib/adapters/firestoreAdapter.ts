@@ -43,6 +43,27 @@ export class FirestoreAdapter implements IDatabaseRepository {
         }
     }
 
+    async listPaymentForms(userId: string): Promise<PaymentForm[]> {
+        try {
+            const snapshot = await this.db
+                .collection('payment-forms')
+                .where('userId', '==', userId)
+                .get();
+
+            return snapshot.docs.map((doc) => {
+                const data = doc.data();
+                return {
+                    ...data,
+                    paymentFormId: doc.id,
+                    id: doc.id,
+                } as unknown as PaymentForm;
+            });
+        } catch (error) {
+            console.error('FirestoreAdapter: Error listing payment forms:', error);
+            return [];
+        }
+    }
+
     async savePaymentForm(
         data: Omit<PaymentForm, 'paymentFormId'> & { paymentFormId?: string }
     ): Promise<string> {
