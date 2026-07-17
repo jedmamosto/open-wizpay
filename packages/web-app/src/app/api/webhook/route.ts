@@ -4,7 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const POST = async (request: NextRequest) => {
     try {
-        const signatureHeader = request.headers.get('X-Paymongo-Signature');
+        const signatureHeader =
+            request.headers.get('paymongo-signature') ||
+            request.headers.get('x-paymongo-signature') ||
+            request.headers.get('Paymongo-Signature') ||
+            request.headers.get('X-Paymongo-Signature');
         if (!signatureHeader) {
             return NextResponse.json({ error: 'Missing signature header' }, { status: 400 });
         }

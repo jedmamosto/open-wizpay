@@ -64,14 +64,28 @@ export const POST = async (request: NextRequest) => {
             return NextResponse.json({ error: 'No secret key configured' }, { status: 400 });
         }
 
+        // Generate a deterministic idempotency key based on checkout details to avoid double-charging on duplicate requests
+        const idempotencyPayload = JSON.stringify({
+            paymentFormId,
+            checkoutName,
+            checkoutEmail,
+            checkoutPhone,
+            selectedProducts: selectedProducts.map(p => p.productId || p.productName),
+        });
+        const idempotencyKey = crypto
+            .createHash('sha256')
+            .update(idempotencyPayload)
+            .digest('hex');
+
         const createCheckoutSession = await fetch(
-            'https://api.paymongo.com/v1/checkout_sessions',
+            'https://api.paymongo.com/v2/checkout_sessions',
             {
                 method: 'POST',
                 headers: {
                     accept: 'application/json',
                     'Content-Type': 'application/json',
                     authorization: `Basic ${Buffer.from(secretKey).toString('base64')}`,
+                    'Idempotency-Key': idempotencyKey,
                 },
                 body: JSON.stringify({
                     data: {
@@ -93,6 +107,8 @@ export const POST = async (request: NextRequest) => {
                                 'gcash',
                                 'grab_pay',
                                 'paymaya',
+                                'shopee_pay',
+                                'google_pay',
                             ],
                             cancel_url: paymentFormData.paymentFormCancelURL,
                             success_url: `${
@@ -144,10 +160,19 @@ export const POST = async (request: NextRequest) => {
 
             return NextResponse.json({ checkoutURL });
         } else {
-            return NextResponse.json({
-                error: 'Failed to create a checkout session',
-                details: checkoutResponse,
-            });
+            const status = createCheckoutSession.status || 400;
+            const paymongoErrors = checkoutResponse.errors;
+            let errorMessage = 'Failed to create a checkout session';
+            if (Array.isArray(paymongoErrors) && paymongoErrors.length > 0) {
+                errorMessage = paymongoErrors.map(e => `${e.detail || e.code}`).join(', ');
+            }
+            return NextResponse.json(
+                {
+                    error: errorMessage,
+                    details: checkoutResponse,
+                },
+                { status }
+            );
         }
     } catch (error) {
         console.error(error);

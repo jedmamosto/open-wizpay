@@ -18,15 +18,23 @@ export function verifyPaymongoSignature(
             return false;
         }
 
-        const [tField, v1Field] = signatureHeader.split(',');
-        if (!tField || !v1Field) {
+        // Parse signature header into key-value pairs (supports t, te, li, v1)
+        const parts = signatureHeader.split(',').reduce((acc, part) => {
+            const [key, val] = part.trim().split('=');
+            if (key && val) {
+                acc[key] = val;
+            }
+            return acc;
+        }, {} as Record<string, string>);
+
+        const timestamp = parts['t'];
+        if (!timestamp) {
             return false;
         }
 
-        const timestamp = tField.split('=')[1];
-        const signature = v1Field.split('=')[1];
-
-        if (!timestamp || !signature) {
+        // PayMongo sends 'li' (live) or 'te' (test). Stripe/legacy uses 'v1'.
+        const signature = parts['li'] || parts['te'] || parts['v1'];
+        if (!signature) {
             return false;
         }
 
@@ -36,7 +44,15 @@ export function verifyPaymongoSignature(
             .update(payload)
             .digest('hex');
 
-        return computedSignature === signature;
+        // Timing-safe comparison to prevent timing attacks
+        const sigBuffer = Buffer.from(signature, 'hex');
+        const computedBuffer = Buffer.from(computedSignature, 'hex');
+
+        if (sigBuffer.length !== computedBuffer.length) {
+            return false;
+        }
+
+        return crypto.timingSafeEqual(sigBuffer, computedBuffer);
     } catch (error) {
         console.error('Error verifying PayMongo signature:', error);
         return false;
