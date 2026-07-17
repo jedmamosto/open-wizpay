@@ -48,6 +48,22 @@ export const GET = async (request: NextRequest) => {
         );
     }
 
+    // SQLite Provider Bypass
+    if (process.env.DATABASE_PROVIDER === 'sqlite') {
+        const devKey = process.env.WIZPAY_DEV_API_KEY || 'wz_dev_local123456';
+        const maskedKey = devKey.length > 8 
+            ? `${devKey.substring(0, 6)}••••${devKey.slice(-3)}` 
+            : 'wz_dev_••••••••';
+        return NextResponse.json([
+            {
+                id: 'sqlite-dev-key',
+                keyName: 'Pre-configured Dev Key (env.local)',
+                createdAt: new Date().toISOString(),
+                maskedKey: maskedKey,
+            }
+        ], { headers: cacheBustingHeaders });
+    }
+
     try {
         const db = admin.firestore();
         const snapshot = await db
@@ -80,6 +96,14 @@ export const GET = async (request: NextRequest) => {
 export const POST = async (request: NextRequest) => {
     const activeProject = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'unknown';
     console.log(`[Developer Keys POST] Generate key against Firebase project: ${activeProject}`);
+
+    // SQLite Provider Bypass
+    if (process.env.DATABASE_PROVIDER === 'sqlite') {
+        return NextResponse.json(
+            { error: 'API key generation is disabled in SQLite mode. Please use your pre-configured WIZPAY_DEV_API_KEY in .env.local.' },
+            { status: 400, headers: cacheBustingHeaders }
+        );
+    }
 
     try {
         const body = await request.json();
@@ -133,6 +157,14 @@ export const POST = async (request: NextRequest) => {
 export const DELETE = async (request: NextRequest) => {
     const activeProject = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'unknown';
     console.log(`[Developer Keys DELETE] Revoke key against Firebase project: ${activeProject}`);
+
+    // SQLite Provider Bypass
+    if (process.env.DATABASE_PROVIDER === 'sqlite') {
+        return NextResponse.json(
+            { error: 'Revocation is disabled in SQLite mode. The system-configured key cannot be deleted.' },
+            { status: 400, headers: cacheBustingHeaders }
+        );
+    }
 
     const { searchParams } = new URL(request.url);
     const keyId = searchParams.get('keyId');
