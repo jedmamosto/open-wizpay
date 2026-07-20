@@ -28,8 +28,7 @@ export async function getUserId(request: NextRequest): Promise<string | null> {
 
     // Handle developer sandbox fallback bypass
     if (sessionCookie === 'test-user-mcp') {
-        const provider = process.env.DATABASE_PROVIDER || 'firestore';
-        return provider === 'sqlite' ? 'self-hosted-admin' : 'test-user-mcp';
+        return 'test-user-mcp';
     }
 
     try {
@@ -46,8 +45,7 @@ export async function getUserId(request: NextRequest): Promise<string | null> {
         }
 
         // Return a static admin ID so the database scopes all forms to this user
-        const provider = process.env.DATABASE_PROVIDER || 'firestore';
-        return provider === 'sqlite' ? 'self-hosted-admin' : 'admin-user-id';
+        return 'admin-user-id';
     } catch (error) {
         console.error('Session decryption failed:', error);
         return null;
@@ -62,7 +60,7 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<Authen
     if (!uid) return null;
 
     // Handle developer fallback user bypass
-    if (uid === 'test-user-mcp' || uid === 'self-hosted-admin') {
+    if (uid === 'test-user-mcp') {
         return {
             uid,
             role: UserRole.superAdmin,

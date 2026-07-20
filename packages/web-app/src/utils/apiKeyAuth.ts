@@ -16,8 +16,7 @@ export async function validateApiKey(authHeader: string | null): Promise<string 
     // Developer Fallback Check (bypasses DB query)
     const devApiKey = process.env.WIZPAY_DEV_API_KEY;
     if (devApiKey && token === devApiKey) {
-        const provider = process.env.DATABASE_PROVIDER || 'firestore';
-        return provider === 'sqlite' ? 'self-hosted-admin' : 'test-user-mcp'; // Return normalized or mock user ID
+        return 'test-user-mcp'; // Return normalized or mock user ID
     }
 
     // Hash the token using sha256 to match the stored hash in the database
