@@ -27,7 +27,7 @@ WizPay is an independent self-hosted checkout engine and storefront orchestratio
 * **Frontend Library**: React 18
 * **Language**: TypeScript
 * **Styling**: Tailwind CSS
-* **Database & Auth**: Firebase / Cloud Firestore
+* **Database & Auth**: Firestore (Cloud Mode) or SQLite/PostgreSQL (SQL Mode via Prisma)
 * **Payment Processing**: Paymongo API (GCash, Maya, cards, GrabPay, Billease)
 * **Form & Validation**: React Hook Form, Zod
 

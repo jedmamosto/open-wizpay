@@ -88,11 +88,15 @@ When self-hosting the WizPay web app in production:
 
 ### Vercel Project Settings
 1. **Root Directory**: `packages/web-app`
-2. **Build Command**: Set to `npx prisma generate && next build`
+2. **Build Command**: Set to `next build`
 3. **Environment Variables**:
-   - `DATABASE_PROVIDER`: Set to `firestore` or `sqlite`.
-     - *Caution on Vercel SQLite*: Because Vercel uses ephemeral serverless functions, SQLite databases written to local files will not persist. If `DATABASE_PROVIDER` is set to `sqlite`, you should modify the database datasource provider in `prisma/schema.prisma` to `postgresql` (or other remote SQL providers) and supply the remote database URL.
-   - `DATABASE_URL`: Connection string to your remote SQL database.
-   - `NEXT_PUBLIC_APP_URL`: Your production domain URL.
+   - `NEXT_PUBLIC_APP_URL`: Your production domain URL (e.g. `https://your-domain.vercel.app`).
    - Standard Firebase environment variables matching your `.env.local` settings.
+   - `PAYMONGO_PUBLIC_KEY` & `PAYMONGO_SECRET_KEY` matching your active credentials.
+   - `PAYMONGO_WEBHOOK_SECRET`: The webhook signature secret from PayMongo dashboard.
 
+### Webhook Configuration
+For live payments to transition automatically from `pending` to `paid` status, you must register a Webhook in your PayMongo Dashboard:
+- **Webhook URL**: `https://your-domain.vercel.app/api/webhook`
+- **Events**: `checkout_session.payment.paid`
+- **Signing Secret**: Copy the signing secret from the PayMongo dashboard and add it to Vercel as `PAYMONGO_WEBHOOK_SECRET`.

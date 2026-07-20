@@ -35,28 +35,28 @@ This document tracks the core architectural decisions made for the WizPay projec
 ## ADR-003: Pluggable Database Adapter Layer
 
 *   **Date**: 2026-07-15
-*   **Status**: Accepted
+*   **Status**: Superseded / Deprecated (Replaced by Firestore-only architecture)
 *   **Context**: 
     Firebase Firestore was a hard requirement for saving payment forms and checkout sessions, presenting onboarding friction for developers who want a quick local setup or a single SQL database.
 *   **Decision**: 
-    We will implement a pluggable Database Adapter Interface. By default, WizPay will support **SQLite/Postgres via Prisma**, allowing local zero-config runs (storing data in a local `.sqlite` file), while keeping **Firestore** as a pluggable, optional provider.
+    [SUPERSEDED] Replaced by a Firestore-only database architecture. The pluggable Database Adapter Layer and SQL/Prisma support have been deprecated and removed in favor of direct Firestore usage to simplify cloud deployment.
 *   **Consequences**: 
-    *   *Easier*: Developers can launch the system with a single `npm run dev` and SQLite without creating Google Cloud/Firebase accounts.
-    *   *Harder*: Maintaining data parity across SQL (Prisma) schemas and NoSQL (Firestore) collections requires strict repository interface validators.
+    *   *Easier*: Single database strategy across all environments (dev and prod), eliminating database adapter complexity.
+    *   *Harder*: Requires Google Cloud/Firebase accounts even for local development.
 
 ---
 
 ## ADR-004: Environment-Based Admin Authentication
 
 *   **Date**: 2026-07-15
-*   **Status**: Accepted
+*   **Status**: Superseded / Deprecated (Replaced by standard Firebase Auth)
 *   **Context**: 
     Self-hosted single-tenant environments do not require complex, database-backed multi-user authentication systems. 
 *   **Decision**: 
-    For self-hosted SQL database mode, the admin dashboard will authenticate using a single admin account defined in the environment via `ADMIN_EMAIL` and `ADMIN_PASSWORD` (secured via stateless JWT cookies). The app will fall back to Firebase Auth only if Firestore mode is explicitly active.
+    [SUPERSEDED] Replaced by standard Firebase Authentication, as the system has transitioned to a Firestore-only architecture.
 *   **Consequences**: 
-    *   *Easier*: Eliminates user signup/login tables in SQLite and removes external auth server dependencies.
-    *   *Harder*: Adding team members or multiple admin roles to a single instance requires manual code changes or migrating to Firestore mode.
+    *   *Easier*: Leverages robust, secure authentication managed directly by Firebase.
+    *   *Harder*: Requires setting up Firebase Auth domain and configuration parameters for all deployments.
 
 ---
 
