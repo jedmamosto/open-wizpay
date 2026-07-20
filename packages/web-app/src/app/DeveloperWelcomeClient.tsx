@@ -141,11 +141,9 @@ export default function DeveloperWelcomeClient({ diagnostics }: DeveloperWelcome
   const isDatabaseOk = diagnostics.isDatabaseConnected;
   const isPaymongoOk = diagnostics.hasPaymongoPubKey && diagnostics.hasPaymongoSecKey;
   const isFirebaseClientOk = diagnostics.hasFirebaseApiKey && diagnostics.hasFirebaseProjectId;
-  const isFirebaseAdminOk = diagnostics.databaseProvider === 'sqlite' || diagnostics.hasFirebaseServiceAccount;
+  const isFirebaseAdminOk = diagnostics.hasFirebaseServiceAccount;
   
-  const isAuthOk = diagnostics.databaseProvider === 'firestore' 
-    ? isFirebaseClientOk 
-    : (diagnostics.hasAdminEmail && diagnostics.hasAdminPassword);
+  const isAuthOk = isFirebaseClientOk;
 
   const isSystemReady = isDatabaseOk && isPaymongoOk && isAuthOk && isFirebaseAdminOk;
 
@@ -281,9 +279,7 @@ export default function DeveloperWelcomeClient({ diagnostics }: DeveloperWelcome
                     <div>
                       <span className="text-xs font-bold text-white block">Admin Dashboard Auth</span>
                       <span className="text-[11px] text-[#a6d0b5]/70 block font-mono">
-                        {diagnostics.databaseProvider === 'sqlite' 
-                          ? 'Env auth (Email/Password)' 
-                          : 'Firebase Cloud Authentication'}
+                        Firebase Cloud Authentication
                       </span>
                     </div>
                   </div>
@@ -298,29 +294,27 @@ export default function DeveloperWelcomeClient({ diagnostics }: DeveloperWelcome
                   )}
                 </div>
 
-                {/* 4. Firebase SDK config (if firestore provider is active) */}
-                {diagnostics.databaseProvider === 'firestore' && (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-[#001208] border border-[#112f21]">
-                    <div className="flex items-start gap-3">
-                      <FolderOpen className="w-4 h-4 text-[#a6d0b5] mt-0.5 shrink-0" />
-                      <div>
-                        <span className="text-xs font-bold text-white block">Firebase Admin Service</span>
-                        <span className="text-[11px] text-[#a6d0b5]/70 block font-mono">
-                          Credentials parsing check
-                        </span>
-                      </div>
+                {/* 4. Firebase SDK config */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[#001208] border border-[#112f21]">
+                  <div className="flex items-start gap-3">
+                    <FolderOpen className="w-4 h-4 text-[#a6d0b5] mt-0.5 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-white block">Firebase Admin Service</span>
+                      <span className="text-[11px] text-[#a6d0b5]/70 block font-mono">
+                        Credentials parsing check
+                      </span>
                     </div>
-                    {isFirebaseAdminOk ? (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ccf15a]/10 border border-[#ccf15a]/30 text-[#ccf15a] uppercase">
-                        Loaded
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-500/10 border border-red-500/30 text-red-400 uppercase">
-                        Missing Account Key
-                      </span>
-                    )}
                   </div>
-                )}
+                  {isFirebaseAdminOk ? (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#ccf15a]/10 border border-[#ccf15a]/30 text-[#ccf15a] uppercase">
+                      Loaded
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-500/10 border border-red-500/30 text-red-400 uppercase">
+                      Missing Account Key
+                    </span>
+                  )}
+                </div>
 
               </div>
 
@@ -359,21 +353,14 @@ export default function DeveloperWelcomeClient({ diagnostics }: DeveloperWelcome
               
               <div className="space-y-2.5 font-mono text-xs">
                 <div className="space-y-1">
-                  <span className="text-[#a6d0b5]/50 block text-[10px]">1. Deploy local SQLite Database</span>
-                  <div className="bg-[#001208] p-2 rounded border border-[#112f21]/80 text-[#c8ebd5] flex justify-between items-center">
-                    <span>npx prisma db push</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[#a6d0b5]/50 block text-[10px]">2. Install & Start MCP Server (for Cursor/Claude Desktop)</span>
+                  <span className="text-[#a6d0b5]/50 block text-[10px]">1. Install & Start MCP Server (for Cursor/Claude Desktop)</span>
                   <div className="bg-[#001208] p-2 rounded border border-[#112f21]/80 text-[#c8ebd5] flex justify-between items-center">
                     <span>npm run setup:mcp</span>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-[#a6d0b5]/50 block text-[10px]">3. Local SDK Script Reference</span>
+                  <span className="text-[#a6d0b5]/50 block text-[10px]">2. Local SDK Script Reference</span>
                   <div className="bg-[#001208] p-2 rounded border border-[#112f21]/80 text-[#c8ebd5] overflow-x-auto text-[10px] whitespace-nowrap">
                     <code>&lt;script src=&quot;http://localhost:3000/sdk/wizpay.js&quot;&gt;&lt;/script&gt;</code>
                   </div>

@@ -25,6 +25,7 @@ export default function DeveloperSettings() {
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+
   // Fetch active keys
   const fetchKeys = useCallback(async () => {
     if (!currentUserId) return;
@@ -36,12 +37,19 @@ export default function DeveloperSettings() {
           'Pragma': 'no-cache',
         }
       });
-      if (!response.ok) throw new Error('Failed to fetch keys');
+      if (!response.ok) {
+        let errMsg = 'Failed to fetch keys';
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) errMsg = errData.error;
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
       const data = await response.json();
       setKeys(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error('Failed to load active API keys.');
+      toast.error(error.message || 'Failed to load active API keys.');
     } finally {
       setLoading(false);
     }
@@ -86,7 +94,14 @@ export default function DeveloperSettings() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to generate key');
+      if (!response.ok) {
+        let errMsg = 'Failed to generate key';
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) errMsg = errData.error;
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
       const data = await response.json();
       
       setGeneratedKey(data.apiKey);
@@ -94,9 +109,9 @@ export default function DeveloperSettings() {
       setNewKeyName('');
       fetchKeys();
       toast.success('API key generated successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error('Failed to generate API key.');
+      toast.error(error.message || 'Failed to generate API key.');
     }
   };
 
@@ -109,13 +124,20 @@ export default function DeveloperSettings() {
         method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error('Failed to revoke key');
+      if (!response.ok) {
+        let errMsg = 'Failed to revoke key';
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) errMsg = errData.error;
+        } catch (_) {}
+        throw new Error(errMsg);
+      }
       
       fetchKeys();
       toast.success('API Key revoked.');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error('Failed to revoke API key.');
+      toast.error(error.message || 'Failed to revoke API key.');
     }
   };
 
