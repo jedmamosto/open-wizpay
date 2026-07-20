@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/jedmamosto/open-wizpay/compare/wizpay-mcp-setup-v1.1.1...wizpay-mcp-setup-v1.2.0) (2026-07-20)
+
+
+### Features
+
+* **mcp:** update mcp-server setup script and core server entrypoint ([4fa1d7e](https://github.com/jedmamosto/open-wizpay/commit/4fa1d7e4b73617e62243d7f3dc29370246b0827e))
+
 ## [1.1.1](https://github.com/jedmamosto/open-wizpay/compare/wizpay-mcp-setup-v1.1.0...wizpay-mcp-setup-v1.1.1) (2026-07-03)
 
 
