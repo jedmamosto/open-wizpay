@@ -10,7 +10,7 @@ if (!admin.apps.length) {
       credential: admin.credential.cert({
         projectId,
         clientEmail,
-        privateKey: privateKey.replace(/\\n/g, '\n')
+        privateKey: privateKey.replace(/^"|"$/g, '').replace(/\\n/g, '\n')
       })
     });
   } else {

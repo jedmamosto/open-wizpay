@@ -1,6 +1,5 @@
 import { PaymentForm } from '@/schemas/payment-form';
 import { FirestoreAdapter } from './adapters/firestoreAdapter';
-import { PrismaAdapter } from './adapters/prismaAdapter';
 
 export interface DBProduct {
     productId?: string;
@@ -36,9 +35,5 @@ export interface IDatabaseRepository {
 }
 
 export function getDatabaseAdapter(): IDatabaseRepository {
-    const provider = process.env.DATABASE_PROVIDER || 'firestore';
-    if (provider === 'sqlite') {
-        return new PrismaAdapter();
-    }
     return new FirestoreAdapter();
 }

@@ -26,6 +26,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
 
 # vercel
@@ -38,8 +39,4 @@ next-env.d.ts
 # nested modules
 /wizpay-mcp
 
-# local sqlite database and env
-.env
-*.db
-*.db-journal
 
