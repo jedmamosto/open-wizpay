@@ -70,8 +70,8 @@ function handleToolError(error: any, targetUrl: string) {
 =========================================`;
   } else if (isUnauthorized) {
     const troubleshootUrl = targetUrl.includes('127.0.0.1')
-      ? 'http://127.0.0.1:3000/dashboard/settings/api-keys'
-      : 'https://pay.unwiz.ai/dashboard/settings/api-keys';
+      ? 'http://127.0.0.1:3000/admin/developer-settings'
+      : 'https://pay.unwiz.ai/admin/developer-settings';
 
     systemInstruction = `
 =========================================

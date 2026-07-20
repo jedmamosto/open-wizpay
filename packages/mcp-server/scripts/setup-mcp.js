@@ -126,7 +126,38 @@ async function run() {
   }
 
   // 2. Scan for local WizPay server
-  console.log('\nScanning for local WizPay server...');
+  console.log('\nScanning for local WizPay server & configuration...');
+
+  // Auto-detect WIZPAY_DEV_API_KEY from packages/web-app/.env.local
+  let defaultApiKey = '';
+  const envLocalPath = path.resolve(__dirname, '../../web-app/.env.local');
+  if (fs.existsSync(envLocalPath)) {
+    try {
+      const envContent = fs.readFileSync(envLocalPath, 'utf8');
+      const lines = envContent.split('\n');
+      const envVars = {};
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const parts = trimmed.split('=');
+          if (parts.length >= 2) {
+            const key = parts[0].trim();
+            let val = parts.slice(1).join('=').trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+              val = val.slice(1, -1);
+            }
+            envVars[key] = val;
+          }
+        }
+      }
+      if (envVars['WIZPAY_DEV_API_KEY']) {
+        defaultApiKey = envVars['WIZPAY_DEV_API_KEY'];
+      }
+    } catch (err) {
+      // ignore
+    }
+  }
+
   let localServerOnline = false;
   try {
     const controller = new AbortController();
@@ -186,15 +217,27 @@ async function run() {
     apiUrl = apiUrl.replace(/\/$/, '');
   }
 
-  let hintUrl = 'https://pay.unwiz.ai/dashboard/settings/api-keys';
-  if (apiUrl.includes('127.0.0.1')) {
-    hintUrl = 'http://127.0.0.1:3000/dashboard/settings/api-keys';
+  if (!defaultApiKey && (apiUrl.includes('127.0.0.1') || apiUrl.includes('localhost'))) {
+    defaultApiKey = 'wz_dev_local123456';
+  }
+
+  let hintUrl = 'https://pay.unwiz.ai/admin/developer-settings';
+  try {
+    const urlObj = new URL(apiUrl);
+    if (urlObj.hostname === '127.0.0.1' || urlObj.hostname === 'localhost') {
+      hintUrl = `${urlObj.protocol}//${urlObj.host}/admin/developer-settings`;
+    }
+  } catch (e) {
+    if (apiUrl.includes('127.0.0.1') || apiUrl.includes('localhost')) {
+      hintUrl = 'http://127.0.0.1:3000/admin/developer-settings';
+    }
   }
 
   console.log(`\nEnter your WizPay Developer API Key:`);
   console.log(`  (Found in ${hintUrl})`);
-  const apiKeyInput = await askQuestion('API Key: ');
-  const apiKey = apiKeyInput.trim();
+  const apiKeyPrompt = defaultApiKey ? `API Key (Default: ${defaultApiKey}): ` : 'API Key: ';
+  const apiKeyInput = await askQuestion(apiKeyPrompt);
+  const apiKey = apiKeyInput.trim() || defaultApiKey;
   if (!apiKey) {
     console.error('Error: API Key cannot be empty.');
     rl.close();
